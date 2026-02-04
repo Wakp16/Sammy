@@ -1,0 +1,93 @@
+:root {
+  --pink: #ff4fa3;
+  --glass: rgba(20, 20, 20, 0.65);
+}
+
+* { box-sizing: border-box; font-family: system-ui, sans-serif; }
+body { margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; color:white; overflow:hidden; background:#111; }
+.hidden { display:none !important; }
+
+/* Hearts background */
+body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300%; background:url('texture.jpg') repeat; background-size:150px 150px; opacity:0.08; z-index:-1; animation: driftHearts 240s linear infinite;}
+@keyframes driftHearts { 0% { transform: translate(0,0);} 100% { transform: translate(-150px,-150px);} }
+
+/* App container */
+.app { width:340px; }
+
+/* Greeting */
+.greeting { text-align:center; font-size:20px; font-weight:600; padding:14px 22px; border-radius:24px; background:linear-gradient(135deg,#ff9ad5,#ff4fa3); box-shadow:0 4px 12px rgba(255,79,163,0.35); margin-bottom:28px; opacity:0; transform:translateY(-60px); transition: all 0.6s ease; z-index:10;}
+.greeting.show { opacity:1; transform:translateY(-20px); }
+
+/* Buttons */
+.buttonRow { display:flex; justify-content:center; gap:12px; margin-top:16px; }
+.glassBtn { padding:6px 18px; border-radius:14px; background: var(--glass); border:1px solid var(--pink); color:var(--pink); box-shadow:0 0 16px rgba(255,79,163,0.6); cursor:pointer; transition: all 0.25s ease; animation: floatBtn 3s ease-in-out infinite alternate;}
+.glassBtn:hover { transform: translateY(-2px); box-shadow:0 0 25px rgba(255,79,163,0.8); }
+@keyframes floatBtn { 0%{transform:translateY(0);} 100%{transform:translateY(-6px);} }
+
+/* Date Box */
+.dateWrapper { display:flex; align-items:center; justify-content:center; gap:10px; overflow:hidden; position:relative; z-index:1; }
+.sideArrow { width:38px;height:38px;border-radius:50%;background:var(--glass); border:1px solid var(--pink); color:var(--pink); cursor:pointer; box-shadow:0 0 14px rgba(255,79,163,0.5); transition: transform 0.2s ease; animation: floatBtn 2.5s ease-in-out infinite alternate;}
+#dateBox { width:240px;height:240px;border-radius:28px;background:var(--glass); backdrop-filter: blur(18px); border:1px solid rgba(255,79,163,0.2); position:relative; overflow:hidden; cursor:pointer;}
+#dateBox.today { box-shadow:0 0 45px rgba(255,79,163,0.9); }
+
+/* Wave */
+#waveSvg { position:absolute; bottom:0; width:100%; height:100%; z-index:2; pointer-events:none; }
+#wavePath { fill:url(#waveGradient); shape-rendering:auto; }
+
+/* Date Text */
+.dateContent { position:relative; z-index:3; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+#dateBig { font-size:26px; font-weight:700; text-shadow:0 0 18px var(--pink);}
+#weekday { font-size:14px; opacity:0.85; }
+
+/* Task View */
+#taskView { margin-top:16px; background: rgba(20,20,20,0.85); border-radius:22px; padding:20px; border:1px solid rgba(255,79,163,0.3); box-shadow:0 0 35px rgba(255,79,163,0.35);}
+.taskHeader{ font-size:20px; font-weight:600; text-align:center; margin-bottom:16px; text-shadow:0 0 12px rgba(255,79,163,0.4);}
+#todoList { list-style:none; padding:0; margin-top:10px; }
+#todoList li { display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:10px; border-radius:14px; background:rgba(255,79,163,0.08); border:1px solid rgba(255,79,163,0.2); transition: transform 0.15s ease, box-shadow 0.15s ease;}
+#todoList li:hover { transform: translateY(-2px); box-shadow:0 0 15px rgba(255,79,163,0.3); }
+.todoCheckbox { width:22px; height:22px; border-radius:6px; border:2px solid var(--pink); cursor:pointer; transition:transform 0.2s ease,box-shadow 0.2s ease; }
+.todoCheckbox.checked { background: var(--pink); box-shadow:0 0 16px var(--pink); animation:checkPop 0.35s ease; }
+@keyframes checkPop {0%{transform:scale(0.8);}60%{transform:scale(1.3);}100%{transform:scale(1);} }
+.todoItemText{flex:1;}
+.todoItemText.done{text-decoration:line-through; opacity:0.5;}
+.iconBtn{background:var(--glass); border:1px solid var(--pink); color:var(--pink); border-radius:50%; width:28px; height:28px; cursor:pointer;}
+.inputRow{display:flex; gap:10px; margin-top:10px;}
+#taskInput{flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--pink); border-radius:14px; padding:10px; color:white;}
+#addTask{width:42px; height:42px; border-radius:50%; background:var(--pink); font-size:26px; border:none; color:black;}
+#clearBtn{margin-top:12px; width:100%; background:rgba(255,79,163,0.2); border:1px solid var(--pink); color:var(--pink); border-radius:14px; padding:8px;}
+
+/* Month Grid */
+.monthGrid { display:grid; grid-template-columns: repeat(7,1fr); gap:6px; margin-top:12px; }
+.monthDayBox { position:relative; border-radius:12px; height:50px; display:flex; justify-content:center; align-items:center; cursor:pointer; font-weight:600; overflow:hidden; background:var(--glass); }
+.monthDayBox svg { position:absolute; bottom:0; width:100%; height:100%; z-index:0; }
+/* Tooltip */
+.monthDayBox .tooltip { position: absolute; bottom:100%; left:50%; transform:translateX(-50%); padding:4px 8px; background:var(--pink); color:black; font-size:12px; border-radius:6px; white-space:nowrap; opacity:0; pointer-events:none; transition: opacity 0.2s ease; z-index:10; }
+.monthDayBox:hover .tooltip { opacity:1; }
+
+/* ===== Mobile Responsive ===== */
+@media (max-width: 400px) {
+  .app { width: 90vw; }
+  .greeting { font-size: 18px; padding:12px 16px; }
+  .buttonRow { flex-wrap: wrap; gap: 8px; }
+  .glassBtn { padding: 5px 12px; font-size: 14px; }
+  .sideArrow { width:32px; height:32px; }
+  #dateBox { width:90vw; height:calc(90vw); border-radius:20px; }
+  #dateBig { font-size:22px; }
+  #weekday { font-size:12px; }
+  #taskView { padding:16px; margin-top:12px; }
+  #todoList li { flex-direction: column; align-items:flex-start; gap:6px; }
+  .inputRow { flex-direction: column; gap:6px; }
+  #addTask { width:38px; height:38px; font-size:22px; }
+  .monthGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 80px);
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .monthGrid::-webkit-scrollbar { height: 6px; }
+  .monthGrid::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 3px; }
+  .monthGrid::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+  .monthDayBox { flex: 0 0 auto; height:50px; min-width:80px; font-size:14px; }
+  .monthDayBox .tooltip { font-size:10px; padding:3px 6px; }
+}

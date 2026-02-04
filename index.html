@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sammy</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff4fa3">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main class="app">
+
+  <!-- Daily View -->
+  <section id="dateView">
+    <div id="greeting" class="greeting">Good morning Sammy</div>
+
+    <div class="dateWrapper">
+      <button id="prevDay" class="sideArrow">◀</button>
+
+      <div id="dateBox">
+        <svg id="waveSvg" viewBox="0 0 1440 240" preserveAspectRatio="none">
+          <path id="wavePath" fill="url(#waveGradient)"/>
+          <defs>
+            <linearGradient id="waveGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ff9ad5" stop-opacity="0.8"/>
+              <stop offset="50%" stop-color="#ff4fa3" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="#a80057" stop-opacity="0.4"/>
+            </linearGradient>
+            <linearGradient id="waveGradientMini" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ff9ad5" stop-opacity="0.8"/>
+              <stop offset="50%" stop-color="#ff4fa3" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="#a80057" stop-opacity="0.4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <div class="dateContent">
+          <div id="dateBig"></div>
+          <div id="weekday"></div>
+        </div>
+      </div>
+
+      <button id="nextDay" class="sideArrow">▶</button>
+    </div>
+
+    <div class="buttonRow">
+      <button id="todayBtn" class="glassBtn">Today</button>
+      <button id="monthViewBtn" class="glassBtn">Month View</button>
+    </div>
+  </section>
+
+  <!-- Month View -->
+  <section id="monthView" class="hidden">
+    <button id="backMonthBtn" class="glassBtn">← Back</button>
+    <h2 id="monthTitle" class="monthTitle"></h2>
+    <div id="monthGrid" class="monthGrid"></div>
+  </section>
+
+  <!-- Task View -->
+  <section id="taskView" class="hidden">
+    <button id="backTaskBtn" class="glassBtn">← Back</button>
+    <div id="taskHeader" class="taskHeader"></div>
+    <ul id="todoList"></ul>
+
+    <div class="inputRow">
+      <input id="taskInput" placeholder="Add task"/>
+      <button id="addTask">+</button>
+    </div>
+
+    <button id="clearBtn">Clear Day</button>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
