@@ -15,11 +15,12 @@
   <!-- Daily View -->
   <section id="dateView">
     <div id="greeting" class="greeting">Good morning Sammy</div>
+    <div id="greeting2" class="greeting greetingAlt">nag breakfast na you?</div>
 
     <div class="dateWrapper">
       <button id="prevDay" class="sideArrow">◀</button>
 
-      <div id="dateBox">
+      <div id="dateBox" class="dateGlow">
         <svg id="waveSvg" viewBox="0 0 1440 240" preserveAspectRatio="none">
           <path id="wavePath" fill="url(#waveGradient)"/>
           <defs>
@@ -48,6 +49,7 @@
     <div class="buttonRow">
       <button id="todayBtn" class="glassBtn">Today</button>
       <button id="monthViewBtn" class="glassBtn">Month View</button>
+      <button id="deadlineListBtn" class="glassBtn">Deadlines</button>
     </div>
   </section>
 
@@ -66,11 +68,36 @@
 
     <div class="inputRow">
       <input id="taskInput" placeholder="Add task"/>
+    </div>
+    <div class="deadlineRow">
+      <input id="deadlineInput" type="date" aria-label="Task deadline"/>
       <button id="addTask">+</button>
     </div>
 
     <button id="clearBtn">Clear Day</button>
   </section>
+
+  <!-- Deadline List -->
+  <section id="deadlineView" class="hidden">
+    <button id="backDeadlineBtn" class="glassBtn">&larr; Back</button>
+    <div class="taskHeader">Deadlines</div>
+    <ul id="deadlineList"></ul>
+  </section>
+
+  <!-- Edit Modal -->
+  <div id="editOverlay" class="modalOverlay hidden">
+    <div class="modalCard">
+      <div class="modalTitle">Edit Task</div>
+      <div class="modalBody">
+        <input id="editTaskInput" class="modalInput" placeholder="Task"/>
+        <input id="editDeadlineInput" class="modalInput" type="date" aria-label="Edit deadline"/>
+      </div>
+      <div class="modalActions">
+        <button id="editCancelBtn" class="glassBtn">Cancel</button>
+        <button id="editSaveBtn" class="glassBtn">Save</button>
+      </div>
+    </div>
+  </div>
 
 </main>
 
