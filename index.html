@@ -50,7 +50,6 @@
       <button id="todayBtn" class="glassBtn">Today</button>
       <button id="monthViewBtn" class="glassBtn">Month View</button>
       <button id="deadlineListBtn" class="glassBtn">Deadlines</button>
-      <button id="updateBtn" class="glassBtn">Update App</button>
     </div>
   </section>
 
@@ -71,7 +70,10 @@
       <input id="taskInput" placeholder="Add task"/>
     </div>
     <div class="deadlineRow">
-      <input id="deadlineInput" type="date" aria-label="Task deadline"/>
+      <div class="deadlineField">
+        <span class="deadlinePlaceholder">Set deadline</span>
+        <input id="deadlineInput" type="date" aria-label="Task deadline"/>
+      </div>
       <button id="addTask">+</button>
     </div>
 
