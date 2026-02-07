@@ -109,7 +109,7 @@ function updateGreeting(){
     setTimeout(()=>{
         if(allTasksDone && (!deadlineTasks.length || allDeadlinesDone)) {
             greetingEl.textContent="Wow sipag";
-            greetingEl2.textContent = allDeadlinesDone ? "All deadlines done!" : "Nice job";
+            greetingEl2.textContent = allDeadlinesDone ? "\u{1F63D} \u{1F63D} \u{1F63D}" : "Nice job";
         } else {
             const hour = new Date().getHours();
             const base = hour<12 ? "good morning bibi" : hour<18 ? "good afternoon bibi" : "good evening bibi";
@@ -119,7 +119,7 @@ function updateGreeting(){
                     ? ["nag lunch na you?"]
                     : ["nag dinner na you?"];
             greetingEl.textContent = base;
-            greetingEl2.textContent = allDeadlinesDone ? "All deadlines done!" : followUps[Math.floor(Math.random()*followUps.length)];
+            greetingEl2.textContent = allDeadlinesDone ? "\u{1F63D} \u{1F63D} \u{1F63D}" : followUps[Math.floor(Math.random()*followUps.length)];
         }
         greetingEl.classList.add("show");
         greetingEl2.classList.add("show");
@@ -131,21 +131,81 @@ let t=0, currentFill=0, targetFill=0;
 let waveFrame = 0;
 const isMobile = window.matchMedia && window.matchMedia("(max-width: 480px)").matches;
 const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const waveStep = 0.035;
-const waveSamples = 90;
-const waveThrottle = 3;
+const waveSpeed = 0.0016;
+let waveSamples = 80;
+let waveAmp1 = 7.5;
+let waveAmp2 = 4.2;
+let waveAmp3 = 2.6;
+let miniSamples = 28;
 
-function animateWave(){
+const waveX = [];
+const waveEdge = [];
+let waveQuality = 1;
+let perfFrames = 0;
+let perfAccum = 0;
+let perfStable = 0;
+
+function buildWaveTables(){
+    waveX.length = 0;
+    waveEdge.length = 0;
+    for(let i=0;i<=waveSamples;i++){
+        const t = i / waveSamples;
+        waveX.push(t * 1440);
+        waveEdge.push(Math.sin(t * Math.PI));
+    }
+}
+
+function setWaveQuality(level){
+    waveQuality = Math.max(0, Math.min(2, level));
+    if (waveQuality === 2){
+        waveSamples = 90;
+        waveAmp1 = 8.0; waveAmp2 = 4.6; waveAmp3 = 2.8;
+        miniSamples = 32;
+    } else if (waveQuality === 1){
+        waveSamples = 70;
+        waveAmp1 = 7.0; waveAmp2 = 3.8; waveAmp3 = 2.2;
+        miniSamples = 26;
+    } else {
+        waveSamples = 50;
+        waveAmp1 = 6.0; waveAmp2 = 3.0; waveAmp3 = 1.8;
+        miniSamples = 20;
+    }
+    buildWaveTables();
+}
+
+setWaveQuality(1);
+
+let lastWaveTime = 0;
+function animateWave(ts=0){
     if (prefersReducedMotion || document.hidden || dateView.classList.contains("hidden")) {
+        lastWaveTime = ts;
         waveFrame = requestAnimationFrame(animateWave);
         return;
     }
-    waveFrame++;
-    if (waveFrame % waveThrottle !== 0) {
-        waveFrame = requestAnimationFrame(animateWave);
-        return;
+    const dt = ts - lastWaveTime;
+    lastWaveTime = ts;
+    if (dt > 0 && dt < 1000){
+        perfFrames++;
+        perfAccum += dt;
+        if (perfFrames >= 30){
+            const avg = perfAccum / perfFrames;
+            if (avg > 24 && waveQuality > 0){
+                setWaveQuality(waveQuality - 1);
+                perfStable = 0;
+            } else if (avg < 18 && waveQuality < 2){
+                perfStable++;
+                if (perfStable >= 2){
+                    setWaveQuality(waveQuality + 1);
+                    perfStable = 0;
+                }
+            } else {
+                perfStable = 0;
+            }
+            perfFrames = 0;
+            perfAccum = 0;
+        }
     }
-    t+=waveStep;
+    t += dt * waveSpeed;
     const tasks = JSON.parse(localStorage.getItem(key()))||[];
     targetFill = tasks.length ? tasks.filter(t=>t.done).length/tasks.length : 0;
     currentFill += (targetFill-currentFill)*0.05;
@@ -154,15 +214,20 @@ function animateWave(){
     const waveBase = (1-currentFill)*boxHeight;
     wavePath.setAttribute("fill","url(#waveGradient)");
 
-    let d=`M0 ${boxHeight} L0 ${waveBase} `;
+    const dParts = [`M0 ${boxHeight} L0 ${waveBase}`];
     for(let i=0;i<=waveSamples;i++){
-        let x=(i/waveSamples)*1440, edgeDamp=Math.sin((i/waveSamples)*Math.PI);
-        let y=waveBase + Math.sin(t+i*0.05)*8*edgeDamp + Math.sin(t*0.7+i*0.1)*5*edgeDamp + Math.sin(t*2.2+i*0.03)*3*edgeDamp;
-        d+=`${x} ${y} `;
+        const edgeDamp = waveEdge[i];
+        const x = waveX[i];
+        const y = waveBase
+            + Math.sin(t + i*0.05)*waveAmp1*edgeDamp
+            + Math.sin(t*0.7 + i*0.1)*waveAmp2*edgeDamp
+            + Math.sin(t*2.2 + i*0.03)*waveAmp3*edgeDamp;
+        dParts.push(`${x} ${y}`);
     }
-    d+=`L1440 ${boxHeight} L0 ${boxHeight} Z`;
+    dParts.push(`L1440 ${boxHeight} L0 ${boxHeight} Z`);
+    const d = dParts.join(" ");
     wavePath.setAttribute("d",d);
-    requestAnimationFrame(animateWave);
+    waveFrame = requestAnimationFrame(animateWave);
 }
 animateWave();
 
@@ -490,7 +555,7 @@ function animateMiniWaves(){
     miniFrameCount = (miniFrameCount + 1) % 12;
     const updateTooltip = miniFrameCount === 0;
     miniWaves.forEach(obj=>{
-        obj.t += 0.035;
+        obj.t += 0.03;
         const {path, boxDate, tooltip} = obj;
         const tasks = JSON.parse(localStorage.getItem(boxDate.toISOString().split("T")[0])) || [];
         const targetFill = tasks.length ? tasks.filter(t=>t.done).length / tasks.length : 0;
@@ -498,15 +563,17 @@ function animateMiniWaves(){
         obj.currentFill += (targetFill - obj.currentFill)*0.05;
         const fill = obj.currentFill;
 
-        let d = `M0 50 L0 ${50*(1-fill)} `;
-        for(let i=0;i<=35;i++){
-            const edgeDamp = Math.sin((i/50)*Math.PI);
-            const x = i*2;
-            const y = 50*(1-fill) + Math.sin(obj.t + i*0.2)*2.2*edgeDamp + Math.sin(obj.t*0.7 + i*0.1)*1.6*edgeDamp;
-            d += `${x} ${y} `;
+        const base = 50*(1-fill);
+        const parts = [`M0 50 L0 ${base}`];
+        for(let i=0;i<=miniSamples;i++){
+            const t = i / miniSamples;
+            const edgeDamp = Math.sin(t * Math.PI);
+            const x = t * 100;
+            const y = base + Math.sin(obj.t + i*0.2)*2.0*edgeDamp + Math.sin(obj.t*0.7 + i*0.1)*1.4*edgeDamp;
+            parts.push(`${x} ${y}`);
         }
-        d += "L100 50 Z";
-        path.setAttribute("d",d);
+        parts.push("L100 50 Z");
+        path.setAttribute("d", parts.join(" "));
 
         if(updateTooltip){
             const todayStart = startOfDay(new Date());
@@ -529,7 +596,6 @@ function scrollToToday(){
         todayBox.scrollIntoView({behavior:"smooth", inline:"center"});
     }
 }
-
 
 renderDate();
 
