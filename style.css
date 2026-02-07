@@ -8,7 +8,7 @@ body { margin:0; min-height:100vh; display:flex; justify-content:center; align-i
 .hidden { display:none !important; }
 
 /* Hearts background */
-body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300%; background:url('texture.jpg') repeat; background-size:150px 150px; opacity:0.18; z-index:-1; animation: driftHearts 240s linear infinite;}
+body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300%; background:url('texture.jpg') repeat; background-size:150px 150px; opacity:0.26; z-index:-1; animation: driftHearts 240s linear infinite;}
 @keyframes driftHearts { 0% { transform: translate(0,0);} 100% { transform: translate(-150px,-150px);} }
 
 /* App container */
@@ -62,11 +62,11 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
 #taskInput{width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--pink); border-radius:14px; padding:10px; color:white;}
 .inputRow{display:flex; gap:10px; margin-top:10px; align-items:center;}
 .deadlineRow{display:flex; gap:10px; margin-top:8px; align-items:center;}
-.deadlineField{position:relative; flex:1; min-width:0;}
+.deadlineField{position:relative; flex:1; min-width:0; width:100%; overflow:hidden; border-radius:14px;}
 #deadlineInput{width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--pink); border-radius:14px; padding:10px; color:transparent; caret-color:white;}
 .deadlineField.filled #deadlineInput{color:white;}
 #deadlineInput:focus{color:white;}
-.deadlinePlaceholder{position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.65); pointer-events:none; font-size:14px;}
+.deadlinePlaceholder{position:absolute; inset:0; display:flex; align-items:center; padding:0 12px; color:rgba(255,255,255,0.65); pointer-events:none; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .deadlineField.filled .deadlinePlaceholder{display:none;}
 #deadlineInput::-webkit-calendar-picker-indicator{ filter: invert(1) hue-rotate(300deg) saturate(2); opacity:0.9; cursor:pointer; }
 #addTask{width:42px; height:42px; border-radius:50%; background:var(--pink); font-size:26px; border:none; color:black;}
@@ -101,13 +101,15 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
 
 /* ===== Mobile Responsive ===== */
 @media (max-width: 480px) {
-  body { align-items:flex-start; padding:18px 0 28px; }
-  .app { width:min(92vw, 380px); }
-  .greeting { font-size: 16px; padding:10px 14px; margin-bottom:18px; }
+  body { min-height:100svh; align-items:flex-start; padding:8px 0 10px; }
+  .app { width:min(92vw, 380px); margin:0 auto; }
+  #dateView { padding-top:24px; }
+  .greeting { font-size: 16px; padding:10px 14px; margin:6px auto 14px; width:100%; max-width:360px; }
   .buttonRow { flex-wrap: wrap; gap: 8px; }
   .glassBtn { padding: 6px 12px; font-size: 13px; }
   .sideArrow { width:32px; height:32px; }
-  #dateBox { width:84vw; height:84vw; max-width:320px; max-height:320px; border-radius:20px; }
+  .dateWrapper { justify-content:center; }
+  #dateBox { width:84vw; height:84vw; max-width:320px; max-height:320px; border-radius:20px; margin:0 auto; }
   #dateBig { font-size:20px; }
   #weekday { font-size:12px; }
   .dateWrapper { gap:8px; }
@@ -136,6 +138,12 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
   .monthGrid::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
   .monthDayBox { flex: 0 0 auto; height:48px; min-width:72px; font-size:13px; }
   .monthDayBox .tooltip { font-size:10px; padding:3px 6px; }
+}
+
+@media (max-width: 480px) and (max-height: 760px) {
+  #dateBox { width:74vw; height:74vw; max-width:280px; max-height:280px; }
+  .buttonRow { gap:6px; margin-top:12px; }
+  .greeting { margin:4px auto 10px; }
 }
 
 @media (max-width: 360px) {
