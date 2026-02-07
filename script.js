@@ -307,6 +307,17 @@ document.getElementById("backDeadlineBtn").onclick = ()=>{ deadlineView.classLis
 document.getElementById("prevDay").onclick = () => { currentDate.setDate(currentDate.getDate()-1); renderDate(); };
 document.getElementById("nextDay").onclick = () => { currentDate.setDate(currentDate.getDate()+1); renderDate(); };
 document.getElementById("todayBtn").onclick = () => { currentDate=new Date(); renderDate(); };
+document.getElementById("updateBtn").onclick = async () => {
+    if ("serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) reg.update();
+    }
+    if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    window.location.reload();
+};
 
 // Month view + mini waves
 let miniWaves = [];
