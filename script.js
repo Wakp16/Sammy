@@ -3,7 +3,8 @@ let currentDate = new Date();
 const dateBox = document.getElementById("dateBox");
 const dateBig = document.getElementById("dateBig");
 const weekday = document.getElementById("weekday");
-const wavePath = document.getElementById("wavePath");
+const miniSamples = 20;
+const isMobile = window.innerWidth < 768;
 const taskView = document.getElementById("taskView");
 const todoList = document.getElementById("todoList");
 const taskInput = document.getElementById("taskInput");
@@ -126,110 +127,34 @@ function updateGreeting(){
     },100);
 }
 
-// Wave animation
-let t=0, currentFill=0, targetFill=0;
-let waveFrame = 0;
-const isMobile = window.matchMedia && window.matchMedia("(max-width: 480px)").matches;
+// Progress animation
+let currentProgress = 0;
+let targetProgress = 0;
+let progressFrame = 0;
 const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const waveSpeed = 0.0016;
-let waveSamples = 80;
-let waveAmp1 = 7.5;
-let waveAmp2 = 4.2;
-let waveAmp3 = 2.6;
-let miniSamples = 28;
+const progressCircle = document.getElementById("progressCircle");
+const circumference = 2 * Math.PI * 90; // radius is 90
 
-const waveX = [];
-const waveEdge = [];
-let waveQuality = 1;
-let perfFrames = 0;
-let perfAccum = 0;
-let perfStable = 0;
-
-function buildWaveTables(){
-    waveX.length = 0;
-    waveEdge.length = 0;
-    for(let i=0;i<=waveSamples;i++){
-        const t = i / waveSamples;
-        waveX.push(t * 1440);
-        waveEdge.push(Math.sin(t * Math.PI));
-    }
-}
-
-function setWaveQuality(level){
-    waveQuality = Math.max(0, Math.min(2, level));
-    if (waveQuality === 2){
-        waveSamples = 90;
-        waveAmp1 = 8.0; waveAmp2 = 4.6; waveAmp3 = 2.8;
-        miniSamples = 32;
-    } else if (waveQuality === 1){
-        waveSamples = 70;
-        waveAmp1 = 7.0; waveAmp2 = 3.8; waveAmp3 = 2.2;
-        miniSamples = 26;
-    } else {
-        waveSamples = 50;
-        waveAmp1 = 6.0; waveAmp2 = 3.0; waveAmp3 = 1.8;
-        miniSamples = 20;
-    }
-    buildWaveTables();
-}
-
-setWaveQuality(1);
-
-let lastWaveTime = 0;
-function animateWave(ts=0){
+let lastProgressTime = 0;
+function animateProgress(ts=0){
     if (prefersReducedMotion || document.hidden || dateView.classList.contains("hidden")) {
-        lastWaveTime = ts;
-        waveFrame = requestAnimationFrame(animateWave);
+        lastProgressTime = ts;
+        progressFrame = requestAnimationFrame(animateProgress);
         return;
     }
-    const dt = ts - lastWaveTime;
-    lastWaveTime = ts;
-    if (dt > 0 && dt < 1000){
-        perfFrames++;
-        perfAccum += dt;
-        if (perfFrames >= 30){
-            const avg = perfAccum / perfFrames;
-            if (avg > 24 && waveQuality > 0){
-                setWaveQuality(waveQuality - 1);
-                perfStable = 0;
-            } else if (avg < 18 && waveQuality < 2){
-                perfStable++;
-                if (perfStable >= 2){
-                    setWaveQuality(waveQuality + 1);
-                    perfStable = 0;
-                }
-            } else {
-                perfStable = 0;
-            }
-            perfFrames = 0;
-            perfAccum = 0;
-        }
-    }
-    t += dt * waveSpeed;
+    const dt = ts - lastProgressTime;
+    lastProgressTime = ts;
     const tasks = JSON.parse(localStorage.getItem(key()))||[];
-    targetFill = tasks.length ? tasks.filter(t=>t.done).length/tasks.length : 0;
-    currentFill += (targetFill-currentFill)*0.05;
+    targetProgress = tasks.length ? tasks.filter(t=>t.done).length/tasks.length : 0;
+    currentProgress += (targetProgress - currentProgress) * 0.05;
 
-    const boxHeight = dateBox.offsetHeight;
-    const waveBase = (1-currentFill)*boxHeight;
-    wavePath.setAttribute("fill","url(#waveGradient)");
-
-    const dParts = [`M0 ${boxHeight} L0 ${waveBase}`];
-    for(let i=0;i<=waveSamples;i++){
-        const edgeDamp = waveEdge[i];
-        const x = waveX[i];
-        const y = waveBase
-            + Math.sin(t + i*0.05)*waveAmp1*edgeDamp
-            + Math.sin(t*0.7 + i*0.1)*waveAmp2*edgeDamp
-            + Math.sin(t*2.2 + i*0.03)*waveAmp3*edgeDamp;
-        dParts.push(`${x} ${y}`);
-    }
-    dParts.push(`L1440 ${boxHeight} L0 ${boxHeight} Z`);
-    const d = dParts.join(" ");
-    wavePath.setAttribute("d",d);
-    waveFrame = requestAnimationFrame(animateWave);
+    const progress = currentProgress;
+    const dashLength = progress * circumference;
+    const gapLength = circumference - dashLength;
+    progressCircle.setAttribute("stroke-dasharray", `${dashLength} ${gapLength}`);
+    progressFrame = requestAnimationFrame(animateProgress);
 }
-animateWave();
+animateProgress();
 
 // Tasks
 function loadTasks(){
@@ -550,7 +475,7 @@ function renderMonth(date){
 }
 
 function animateMiniWaves(){
-    if (!monthViewActive || document.hidden || prefersReducedMotion) { miniFrame = 0; return; }
+    if (!monthViewActive || document.hidden || prefersReducedMotion || isMobile) { miniFrame = 0; return; }
     miniFrame = requestAnimationFrame(animateMiniWaves);
     miniFrameCount = (miniFrameCount + 1) % 12;
     const updateTooltip = miniFrameCount === 0;
@@ -608,30 +533,135 @@ document.addEventListener("keydown", (e)=>{
     if (e.key === "ArrowRight") { currentDate.setDate(currentDate.getDate()+1); renderDate(); }
 });
 
+// --- Export / Import / Versioning & Service Worker update flow ---
+const CURRENT_VERSION = '2';
+(function ensureVersion(){
+  try{
+    const ver = localStorage.getItem('sammy_version');
+    if(!ver) {
+      localStorage.setItem('sammy_version', CURRENT_VERSION);
+    } else if (ver !== CURRENT_VERSION){
+      // placeholder for migrations from older versions
+      // add migration logic here when format changes
+      localStorage.setItem('sammy_version', CURRENT_VERSION);
+    }
+  }catch(e){ console.warn('version check failed', e); }
+})();
+
+const exportBtn = document.getElementById('exportBtn');
+const importFile = document.getElementById('importFile');
+const updateBanner = document.getElementById('updateBanner');
+const updateBtn = document.getElementById('updateBtn');
+const dismissUpdateBtn = document.getElementById('dismissUpdateBtn');
+let pendingSWRegistration = null;
+
+function exportData(){
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(k) || k.startsWith('sammy') ){
+      data[k]=localStorage.getItem(k);
+    }
+  }
+  const blob = new Blob([JSON.stringify(data)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sammy-backup.json';
+  a.click();
+}
+
+function mergeTasks(existing, incoming){
+  const map = new Map();
+  existing.forEach(t=> map.set((t.text||'')+'|'+(t.deadline||''), t));
+  incoming.forEach(t=>{ const key=(t.text||'')+'|'+(t.deadline||''); if(!map.has(key)) map.set(key,t); });
+  return Array.from(map.values());
+}
+
+function importDataFromObject(obj){
+  try{
+    Object.entries(obj).forEach(([k,v])=>{
+      if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(k)){
+        let incoming = [];
+        try{ incoming = JSON.parse(v); }catch(e){ return; }
+        const existing = JSON.parse(localStorage.getItem(k)||'[]');
+        const merged = mergeTasks(existing, incoming);
+        localStorage.setItem(k, JSON.stringify(merged));
+      } else if (!localStorage.getItem(k)){
+        localStorage.setItem(k, v);
+      }
+    });
+    // refresh UI
+    renderDate();
+    if(!dateView.classList.contains('hidden')) loadTasks();
+    renderDeadlineList();
+    alert('Import complete — data merged where appropriate.');
+  }catch(e){ alert('Import failed: invalid file'); }
+}
+
+importFile && importFile.addEventListener('change', (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const obj = JSON.parse(reader.result);
+      if(confirm('Import will merge data from file into local data. Proceed?')){
+        importDataFromObject(obj);
+      }
+    }catch(err){ alert('Invalid JSON file'); }
+  };
+  reader.readAsText(f);
+});
+
+exportBtn && (exportBtn.onclick = ()=>{
+  exportData();
+});
+
+// Service worker: register and show update banner when new SW is waiting
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js')
     .then(reg => {
+      // if there's already a waiting SW, show update
       if (reg.waiting) {
-        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        pendingSWRegistration = reg;
+        updateBanner.classList.remove('hidden');
       }
-      reg.addEventListener("updatefound", () => {
+
+      reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         if (!newWorker) return;
-        newWorker.addEventListener("statechange", () => {
-          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-            newWorker.postMessage({ type: "SKIP_WAITING" });
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed') {
+            // a new SW is installed and waiting to activate
+            pendingSWRegistration = reg;
+            updateBanner.classList.remove('hidden');
           }
         });
       });
 
-      // Auto-update in the background
+      // periodic check
       reg.update();
       setInterval(() => reg.update(), 30 * 60 * 1000);
-      window.addEventListener("focus", () => reg.update());
+      window.addEventListener('focus', () => reg.update());
     })
-    .catch(err => console.error("SW registration failed:", err));
+    .catch(err => console.error('SW registration failed:', err));
 
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
     window.location.reload();
   });
 }
+
+updateBtn && (updateBtn.onclick = ()=>{
+  if(!pendingSWRegistration) return;
+  // Suggest export before update
+  if(confirm('It is recommended to export your data before updating. Export now?')){
+    exportData();
+  }
+  const worker = pendingSWRegistration.waiting || pendingSWRegistration.installing;
+  if(worker) worker.postMessage({type:'SKIP_WAITING'});
+});
+
+dismissUpdateBtn && (dismissUpdateBtn.onclick = ()=>{
+  updateBanner.classList.add('hidden');
+});
+

@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<canvas id="bgCanvas" aria-hidden="true"></canvas>
 
 <main class="app">
 
@@ -21,26 +22,21 @@
       <button id="prevDay" class="sideArrow">&#x25C0;</button>
 
       <div id="dateBox" class="dateGlow">
-        <svg id="waveSvg" viewBox="0 0 1440 240" preserveAspectRatio="none">
-          <path id="wavePath" fill="url(#waveGradient)"/>
+        <div class="dateContent">
+          <div id="dateBig"></div>
+          <div id="weekday"></div>
+        </div>
+
+        <svg id="progressSvg" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
+          <circle id="progressCircle" cx="100" cy="100" r="90" stroke="url(#progressGradient)" stroke-width="8" fill="none" stroke-dasharray="0 565" stroke-linecap="round"/>
           <defs>
-            <linearGradient id="waveGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#ff9ad5" stop-opacity="0.8"/>
-              <stop offset="50%" stop-color="#ff4fa3" stop-opacity="0.6"/>
-              <stop offset="100%" stop-color="#a80057" stop-opacity="0.4"/>
-            </linearGradient>
-            <linearGradient id="waveGradientMini" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#ff9ad5" stop-opacity="0.8"/>
               <stop offset="50%" stop-color="#ff4fa3" stop-opacity="0.6"/>
               <stop offset="100%" stop-color="#a80057" stop-opacity="0.4"/>
             </linearGradient>
           </defs>
         </svg>
-
-        <div class="dateContent">
-          <div id="dateBig"></div>
-          <div id="weekday"></div>
-        </div>
       </div>
 
       <button id="nextDay" class="sideArrow">&#x25B6;</button>
@@ -50,6 +46,18 @@
       <button id="todayBtn" class="glassBtn">Today</button>
       <button id="monthViewBtn" class="glassBtn">Month View</button>
       <button id="deadlineListBtn" class="glassBtn">Deadlines</button>
+    </div>
+    <div class="exportRow" style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+      <button id="exportBtn" class="glassBtn">Export Data</button>
+      <label class="glassBtn" style="cursor:pointer; display:inline-flex; align-items:center;">
+        Import
+        <input id="importFile" type="file" accept="application/json" style="display:none" />
+      </label>
+    </div>
+    <div id="updateBanner" class="hidden" style="display:flex;gap:8px;justify-content:center;margin-top:12px;align-items:center;">
+      <div style="background:rgba(255,79,163,0.08); padding:8px 12px; border-radius:12px; border:1px solid rgba(255,79,163,0.18);">Update available</div>
+      <button id="updateBtn" class="glassBtn">Update</button>
+      <button id="dismissUpdateBtn" class="glassBtn">Later</button>
     </div>
   </section>
 
@@ -105,5 +113,6 @@
 </main>
 
 <script src="script.js"></script>
+<script src="bg-canvas.js" defer></script>
 </body>
 </html>

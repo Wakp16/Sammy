@@ -14,7 +14,8 @@ const assetsToCache = [
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(cacheName).then(cache => cache.addAll(assetsToCache))
-      .then(() => self.skipWaiting())
+      // DO NOT call skipWaiting() automatically. Let the page decide when to activate the new SW.
+      .then(() => {})
   );
 });
 
