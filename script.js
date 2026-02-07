@@ -23,6 +23,9 @@ const editDeadlineInput = document.getElementById("editDeadlineInput");
 const editCancelBtn = document.getElementById("editCancelBtn");
 const editSaveBtn = document.getElementById("editSaveBtn");
 const deadlineField = document.querySelector(".deadlineField");
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeActive = false;
 
 let editContext = null;
 
@@ -57,6 +60,38 @@ window.addEventListener("popstate", (e)=>{
     if(view === "deadlines") renderDeadlineList();
 });
 
+document.addEventListener("visibilitychange", ()=>{
+    if (document.hidden) return;
+    if (monthViewActive && !miniFrame) animateMiniWaves();
+});
+
+function handleSwipe(deltaX, deltaY){
+    if (Math.abs(deltaX) < 40 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+    if (dateView.classList.contains("hidden")) return;
+    if (deltaX < 0) {
+        currentDate.setDate(currentDate.getDate()+1);
+    } else {
+        currentDate.setDate(currentDate.getDate()-1);
+    }
+    renderDate();
+}
+
+dateBox.addEventListener("touchstart", (e)=>{
+    if (e.touches.length !== 1) return;
+    swipeActive = true;
+    swipeStartX = e.touches[0].clientX;
+    swipeStartY = e.touches[0].clientY;
+}, {passive:true});
+
+dateBox.addEventListener("touchend", (e)=>{
+    if (!swipeActive) return;
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - swipeStartX;
+    const deltaY = touch.clientY - swipeStartY;
+    swipeActive = false;
+    handleSwipe(deltaX, deltaY);
+}, {passive:true});
+
 function key(date=currentDate){ return date.toISOString().split("T")[0]; }
 function isToday(){ return new Date().toDateString()===currentDate.toDateString(); }
 
@@ -89,8 +124,24 @@ function updateGreeting(){
 
 // Wave animation
 let t=0, currentFill=0, targetFill=0;
+let waveFrame = 0;
+const isMobile = window.matchMedia && window.matchMedia("(max-width: 480px)").matches;
+const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const waveStep = 0.04;
+const waveSamples = 120;
+const waveThrottle = 2;
+
 function animateWave(){
-    t+=0.03;
+    if (prefersReducedMotion || document.hidden) {
+        waveFrame = requestAnimationFrame(animateWave);
+        return;
+    }
+    waveFrame++;
+    if (waveFrame % waveThrottle !== 0) {
+        waveFrame = requestAnimationFrame(animateWave);
+        return;
+    }
+    t+=waveStep;
     const tasks = JSON.parse(localStorage.getItem(key()))||[];
     targetFill = tasks.length ? tasks.filter(t=>t.done).length/tasks.length : 0;
     currentFill += (targetFill-currentFill)*0.05;
@@ -100,8 +151,8 @@ function animateWave(){
     wavePath.setAttribute("fill","url(#waveGradient)");
 
     let d=`M0 ${boxHeight} L0 ${waveBase} `;
-    for(let i=0;i<=200;i++){
-        let x=(i/200)*1440, edgeDamp=Math.sin((i/200)*Math.PI);
+    for(let i=0;i<=waveSamples;i++){
+        let x=(i/waveSamples)*1440, edgeDamp=Math.sin((i/waveSamples)*Math.PI);
         let y=waveBase + Math.sin(t+i*0.05)*8*edgeDamp + Math.sin(t*0.7+i*0.1)*5*edgeDamp + Math.sin(t*2.2+i*0.03)*3*edgeDamp;
         d+=`${x} ${y} `;
     }
@@ -171,6 +222,17 @@ function addTask(){
 }
 document.getElementById("addTask").onclick = addTask;
 taskInput.addEventListener("keydown", e=>e.key==="Enter" && addTask());
+taskInput.addEventListener("paste", (e)=>{
+    const text = (e.clipboardData || window.clipboardData).getData("text");
+    if(!text || !text.includes("\n")) return;
+    e.preventDefault();
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>l.replace(/^[-*•\u2022]\s+/, "").replace(/^\d+[.)]\s+/, "").trim()).filter(Boolean);
+    if(!lines.length) return;
+    const tasks = JSON.parse(localStorage.getItem(key()))||[];
+    lines.forEach(line => tasks.push({text: line, done:false, deadline:null}));
+    taskInput.value="";
+    save(tasks);
+});
 document.getElementById("clearBtn").onclick = ()=>{ localStorage.removeItem(key()); loadTasks(); };
 
 function normalizeDeadlineString(value){
@@ -409,11 +471,11 @@ function renderMonth(date){
 }
 
 function animateMiniWaves(){
-    if (!monthViewActive) { miniFrame = 0; return; }
+    if (!monthViewActive || document.hidden || prefersReducedMotion) { miniFrame = 0; return; }
     miniFrame = requestAnimationFrame(animateMiniWaves);
-    const updateTooltip = (Date.now() % 3) === 0;
+    const updateTooltip = (Date.now() % 6) === 0;
     miniWaves.forEach(obj=>{
-        obj.t += 0.05;
+        obj.t += 0.04;
         const {path, boxDate, tooltip} = obj;
         const tasks = JSON.parse(localStorage.getItem(boxDate.toISOString().split("T")[0])) || [];
         const targetFill = tasks.length ? tasks.filter(t=>t.done).length / tasks.length : 0;
@@ -422,7 +484,7 @@ function animateMiniWaves(){
         const fill = obj.currentFill;
 
         let d = `M0 50 L0 ${50*(1-fill)} `;
-        for(let i=0;i<=50;i++){
+        for(let i=0;i<=35;i++){
             const edgeDamp = Math.sin((i/50)*Math.PI);
             const x = i*2;
             const y = 50*(1-fill) + Math.sin(obj.t + i*0.2)*3*edgeDamp + Math.sin(obj.t*0.7 + i*0.1)*2*edgeDamp;
@@ -469,6 +531,11 @@ if ('serviceWorker' in navigator) {
           }
         });
       });
+
+      // Auto-update in the background
+      reg.update();
+      setInterval(() => reg.update(), 30 * 60 * 1000);
+      window.addEventListener("focus", () => reg.update());
     })
     .catch(err => console.error("SW registration failed:", err));
 
