@@ -97,7 +97,13 @@ dateBox.addEventListener("touchend", (e)=>{
     handleSwipe(deltaX, deltaY);
 }, {passive:true});
 
-function key(date=currentDate){ return date.toISOString().split("T")[0]; }
+function toLocalKey(date){
+    const y = date.getFullYear();
+    const m = String(date.getMonth()+1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+function key(date=currentDate){ return toLocalKey(date); }
 function isToday(){ return new Date().toDateString()===currentDate.toDateString(); }
 
 function updateGreeting(){
@@ -375,6 +381,40 @@ function renderDeadlineList(){
     });
 }
 
+function mergeTasksUnique(existing, incoming){
+    const map = new Map();
+    existing.forEach(t=> map.set((t.text||'')+'|'+(t.deadline||''), t));
+    incoming.forEach(t=>{
+        const k = (t.text||'')+'|'+(t.deadline||'');
+        if(!map.has(k)) map.set(k, t);
+    });
+    return Array.from(map.values());
+}
+
+function migrateDateKeysToLocal(){
+    const flag = "sammy_date_key_v2";
+    if (localStorage.getItem(flag)) return;
+    const keys = [];
+    for(let i=0; i<localStorage.length; i++){
+        const k = localStorage.key(i);
+        if (k && /^\d{4}-\d{2}-\d{2}$/.test(k)) keys.push(k);
+    }
+    keys.forEach(k=>{
+        const [y,m,d] = k.split("-").map(Number);
+        const utcDate = new Date(Date.UTC(y, m-1, d));
+        const localKey = toLocalKey(utcDate);
+        if (localKey === k) return;
+        let existing = [];
+        let incoming = [];
+        try { existing = JSON.parse(localStorage.getItem(localKey) || "[]"); } catch(e){ existing = []; }
+        try { incoming = JSON.parse(localStorage.getItem(k) || "[]"); } catch(e){ incoming = []; }
+        const merged = mergeTasksUnique(existing, incoming);
+        localStorage.setItem(localKey, JSON.stringify(merged));
+        localStorage.removeItem(k);
+    });
+    localStorage.setItem(flag, "1");
+}
+
 // Render date
 function renderDate() {
     dateBox.classList.toggle("today", isToday());
@@ -457,7 +497,7 @@ function renderMonth(date){
         svg.appendChild(path);
         div.appendChild(svg);
 
-        div.dataset.date = boxDate.toISOString().split("T")[0];
+        div.dataset.date = toLocalKey(boxDate);
 
         const tooltip = document.createElement("div");
         tooltip.className = "tooltip";
@@ -482,7 +522,7 @@ function animateMiniWaves(){
     miniWaves.forEach(obj=>{
         obj.t += 0.03;
         const {path, boxDate, tooltip} = obj;
-        const tasks = JSON.parse(localStorage.getItem(boxDate.toISOString().split("T")[0])) || [];
+        const tasks = JSON.parse(localStorage.getItem(toLocalKey(boxDate))) || [];
         const targetFill = tasks.length ? tasks.filter(t=>t.done).length / tasks.length : 0;
 
         obj.currentFill += (targetFill - obj.currentFill)*0.05;
@@ -515,13 +555,14 @@ function animateMiniWaves(){
 
 // Scroll month view to today
 function scrollToToday(){
-    const todayKey = new Date().toISOString().split("T")[0];
+    const todayKey = toLocalKey(new Date());
     const todayBox = [...monthGrid.children].find(div => div.dataset && div.dataset.date === todayKey);
     if(todayBox){
         todayBox.scrollIntoView({behavior:"smooth", inline:"center"});
     }
 }
 
+migrateDateKeysToLocal();
 renderDate();
 
 document.addEventListener("keydown", (e)=>{
@@ -533,7 +574,7 @@ document.addEventListener("keydown", (e)=>{
     if (e.key === "ArrowRight") { currentDate.setDate(currentDate.getDate()+1); renderDate(); }
 });
 
-// --- Export / Import / Versioning & Service Worker update flow ---
+// --- Versioning & Service Worker update flow ---
 const CURRENT_VERSION = '2';
 (function ensureVersion(){
   try{
@@ -548,74 +589,10 @@ const CURRENT_VERSION = '2';
   }catch(e){ console.warn('version check failed', e); }
 })();
 
-const exportBtn = document.getElementById('exportBtn');
-const importFile = document.getElementById('importFile');
 const updateBanner = document.getElementById('updateBanner');
 const updateBtn = document.getElementById('updateBtn');
 const dismissUpdateBtn = document.getElementById('dismissUpdateBtn');
 let pendingSWRegistration = null;
-
-function exportData(){
-  const data = {};
-  for(let i=0;i<localStorage.length;i++){
-    const k = localStorage.key(i);
-    if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(k) || k.startsWith('sammy') ){
-      data[k]=localStorage.getItem(k);
-    }
-  }
-  const blob = new Blob([JSON.stringify(data)],{type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'sammy-backup.json';
-  a.click();
-}
-
-function mergeTasks(existing, incoming){
-  const map = new Map();
-  existing.forEach(t=> map.set((t.text||'')+'|'+(t.deadline||''), t));
-  incoming.forEach(t=>{ const key=(t.text||'')+'|'+(t.deadline||''); if(!map.has(key)) map.set(key,t); });
-  return Array.from(map.values());
-}
-
-function importDataFromObject(obj){
-  try{
-    Object.entries(obj).forEach(([k,v])=>{
-      if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(k)){
-        let incoming = [];
-        try{ incoming = JSON.parse(v); }catch(e){ return; }
-        const existing = JSON.parse(localStorage.getItem(k)||'[]');
-        const merged = mergeTasks(existing, incoming);
-        localStorage.setItem(k, JSON.stringify(merged));
-      } else if (!localStorage.getItem(k)){
-        localStorage.setItem(k, v);
-      }
-    });
-    // refresh UI
-    renderDate();
-    if(!dateView.classList.contains('hidden')) loadTasks();
-    renderDeadlineList();
-    alert('Import complete — data merged where appropriate.');
-  }catch(e){ alert('Import failed: invalid file'); }
-}
-
-importFile && importFile.addEventListener('change', (e)=>{
-  const f = e.target.files && e.target.files[0];
-  if(!f) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try{
-      const obj = JSON.parse(reader.result);
-      if(confirm('Import will merge data from file into local data. Proceed?')){
-        importDataFromObject(obj);
-      }
-    }catch(err){ alert('Invalid JSON file'); }
-  };
-  reader.readAsText(f);
-});
-
-exportBtn && (exportBtn.onclick = ()=>{
-  exportData();
-});
 
 // Service worker: register and show update banner when new SW is waiting
 if ('serviceWorker' in navigator) {
@@ -653,10 +630,6 @@ if ('serviceWorker' in navigator) {
 
 updateBtn && (updateBtn.onclick = ()=>{
   if(!pendingSWRegistration) return;
-  // Suggest export before update
-  if(confirm('It is recommended to export your data before updating. Export now?')){
-    exportData();
-  }
   const worker = pendingSWRegistration.waiting || pendingSWRegistration.installing;
   if(worker) worker.postMessage({type:'SKIP_WAITING'});
 });

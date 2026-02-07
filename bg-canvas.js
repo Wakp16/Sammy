@@ -86,9 +86,9 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      // glow shadow scaled to size (disabled on mobile for perf)
+      // glow shadow scaled to size (disabled for perf)
       ctx.shadowColor = 'rgba(255,79,163,0.25)';
-      ctx.shadowBlur = isMobile ? 0 : Math.max(4, col.size * 0.45);
+      ctx.shadowBlur = 0;
 
       // pink gradient fill (cached)
       ctx.fillStyle = drawGradient(col.x, col.size);

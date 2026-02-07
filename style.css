@@ -40,9 +40,9 @@ body { background: linear-gradient(180deg, #0f0610 0%, #0b0410 100%); }
 .dateWrapper { display:flex; align-items:center; justify-content:center; gap:10px; overflow:visible; position:relative; z-index:1; }
 .sideArrow { width:38px;height:38px;border-radius:50%;background:var(--glass); border:1px solid var(--pink); color:var(--pink); cursor:pointer; box-shadow:0 0 10px rgba(255,79,163,0.45); transition: transform 0.18s ease; animation: floatBtn 4s ease-in-out infinite alternate;}
 .sideArrow:active { transform: scale(0.96); }
-#dateBox { width:240px; aspect-ratio: 1/1; height:auto; border-radius:28px;background:var(--glass); backdrop-filter: blur(18px); border:1px solid rgba(255,79,163,0.2); position:relative; overflow:hidden; cursor:pointer;}
+#dateBox { width:240px; aspect-ratio: 1/1; height:auto; border-radius:28px; background:#120712; border:1px solid rgba(255,79,163,0.45); position:relative; overflow:hidden; cursor:pointer;}
 #dateBox.today { box-shadow:0 0 45px rgba(255,79,163,0.9); }
-.dateGlow { box-shadow: 0 0 12px rgba(255,79,163,0.45), 0 0 24px rgba(255,79,163,0.3); filter: drop-shadow(0 0 12px rgba(255,79,163,0.35)); animation: glowPulse 6s ease-in-out infinite; }
+.dateGlow { box-shadow: 0 0 12px rgba(255,79,163,0.45), 0 0 24px rgba(255,79,163,0.3); animation: glowPulse 6s ease-in-out infinite; }
 #dateBox.today.dateGlow { box-shadow:0 0 55px rgba(255,79,163,1); }
 @keyframes glowPulse { 0%{ box-shadow:0 0 10px rgba(255,79,163,0.35), 0 0 18px rgba(255,79,163,0.2);} 50%{ box-shadow:0 0 18px rgba(255,79,163,0.6), 0 0 32px rgba(255,79,163,0.35);} 100%{ box-shadow:0 0 10px rgba(255,79,163,0.35), 0 0 18px rgba(255,79,163,0.2);} }
 
@@ -98,7 +98,7 @@ body { background: linear-gradient(180deg, #0f0610 0%, #0b0410 100%); }
 .deadlineBadge.dueSoon { color:#ffd1e8; border-color:#ffd1e8; text-shadow:0 0 10px rgba(255,79,163,0.5); }
 
 /* Modal */
-.modalOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center; z-index:50; backdrop-filter: blur(3px); }
+.modalOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center; z-index:50; }
 .modalOverlay:not(.hidden) .modalCard { animation: modalIn 180ms ease; }
 .modalOverlay.hidden .modalCard { animation: none; }
 .modalCard { width:min(92vw, 360px); background:rgba(20,20,20,0.9); border-radius:18px; border:1px solid rgba(255,79,163,0.28); box-shadow:0 0 24px rgba(255,79,163,0.35); padding:16px; }
