@@ -4,35 +4,40 @@
 }
 
 * { box-sizing: border-box; font-family: system-ui, sans-serif; }
+html { scroll-behavior: smooth; }
 body { margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; color:white; overflow:hidden; background:#111; }
 .hidden { display:none !important; }
+.view { animation: viewIn 220ms ease; }
+@keyframes viewIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
 
 /* Hearts background */
-body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300%; background:url('texture.jpg') repeat; background-size:150px 150px; opacity:0.26; z-index:-1; animation: driftHearts 240s linear infinite;}
+body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300%; background:url('texture.jpg') repeat; background-size:150px 150px; opacity:0.22; z-index:-1; animation: driftHearts 360s linear infinite;}
 @keyframes driftHearts { 0% { transform: translate(0,0);} 100% { transform: translate(-150px,-150px);} }
 
 /* App container */
 .app { width:340px; }
 
 /* Greeting */
-.greeting { text-align:center; font-size:20px; font-weight:600; padding:14px 22px; border-radius:24px; background:linear-gradient(135deg,#ff9ad5,#ff4fa3); box-shadow:0 4px 12px rgba(255,79,163,0.35); margin-top:10px; margin-bottom:12px; opacity:0; transform:translateY(-40px); transition: all 0.6s ease; z-index:10;}
+.greeting { text-align:center; font-size:20px; font-weight:600; padding:14px 22px; border-radius:24px; background:linear-gradient(135deg,#ff9ad5,#ff4fa3); box-shadow:0 3px 10px rgba(255,79,163,0.3); margin-top:10px; margin-bottom:12px; opacity:0; transform:translateY(-28px); transition: all 0.45s ease; z-index:10;}
 .greeting.show { opacity:1; transform:translateY(-20px); }
 .greetingAlt { font-size:16px; font-weight:500; padding:10px 18px; margin-bottom:24px; background:linear-gradient(135deg,#ff8fcf,#ff3e9c); }
 
 /* Buttons */
 .buttonRow { display:flex; justify-content:center; gap:12px; margin-top:16px; }
-.glassBtn { padding:6px 18px; border-radius:14px; background: var(--glass); border:1px solid var(--pink); color:var(--pink); box-shadow:0 0 16px rgba(255,79,163,0.6); cursor:pointer; transition: all 0.25s ease; animation: floatBtn 3s ease-in-out infinite alternate;}
+.glassBtn { padding:6px 18px; border-radius:14px; background: var(--glass); border:1px solid var(--pink); color:var(--pink); box-shadow:0 0 12px rgba(255,79,163,0.5); cursor:pointer; transition: all 0.2s ease; animation: floatBtn 4s ease-in-out infinite alternate;}
 .glassBtn:hover { transform: translateY(-2px); box-shadow:0 0 25px rgba(255,79,163,0.8); }
-@keyframes floatBtn { 0%{transform:translateY(0);} 100%{transform:translateY(-6px);} }
+.glassBtn:active { transform: translateY(0); box-shadow:0 0 18px rgba(255,79,163,0.6); }
+@keyframes floatBtn { 0%{transform:translateY(0);} 100%{transform:translateY(-4px);} }
 
 /* Date Box */
 .dateWrapper { display:flex; align-items:center; justify-content:center; gap:10px; overflow:visible; position:relative; z-index:1; }
-.sideArrow { width:38px;height:38px;border-radius:50%;background:var(--glass); border:1px solid var(--pink); color:var(--pink); cursor:pointer; box-shadow:0 0 14px rgba(255,79,163,0.5); transition: transform 0.2s ease; animation: floatBtn 2.5s ease-in-out infinite alternate;}
+.sideArrow { width:38px;height:38px;border-radius:50%;background:var(--glass); border:1px solid var(--pink); color:var(--pink); cursor:pointer; box-shadow:0 0 10px rgba(255,79,163,0.45); transition: transform 0.18s ease; animation: floatBtn 4s ease-in-out infinite alternate;}
+.sideArrow:active { transform: scale(0.96); }
 #dateBox { width:240px;height:240px;border-radius:28px;background:var(--glass); backdrop-filter: blur(18px); border:1px solid rgba(255,79,163,0.2); position:relative; overflow:hidden; cursor:pointer;}
 #dateBox.today { box-shadow:0 0 45px rgba(255,79,163,0.9); }
-.dateGlow { box-shadow: 0 0 18px rgba(255,79,163,0.55), 0 0 40px rgba(255,79,163,0.4); filter: drop-shadow(0 0 18px rgba(255,79,163,0.45)); animation: glowPulse 4s ease-in-out infinite; }
+.dateGlow { box-shadow: 0 0 12px rgba(255,79,163,0.45), 0 0 24px rgba(255,79,163,0.3); filter: drop-shadow(0 0 12px rgba(255,79,163,0.35)); animation: glowPulse 6s ease-in-out infinite; }
 #dateBox.today.dateGlow { box-shadow:0 0 55px rgba(255,79,163,1); }
-@keyframes glowPulse { 0%{ box-shadow:0 0 14px rgba(255,79,163,0.4), 0 0 28px rgba(255,79,163,0.25);} 50%{ box-shadow:0 0 28px rgba(255,79,163,0.8), 0 0 50px rgba(255,79,163,0.45);} 100%{ box-shadow:0 0 14px rgba(255,79,163,0.4), 0 0 28px rgba(255,79,163,0.25);} }
+@keyframes glowPulse { 0%{ box-shadow:0 0 10px rgba(255,79,163,0.35), 0 0 18px rgba(255,79,163,0.2);} 50%{ box-shadow:0 0 18px rgba(255,79,163,0.6), 0 0 32px rgba(255,79,163,0.35);} 100%{ box-shadow:0 0 10px rgba(255,79,163,0.35), 0 0 18px rgba(255,79,163,0.2);} }
 
 /* Wave */
 #waveSvg { position:absolute; bottom:0; width:100%; height:100%; z-index:2; pointer-events:none; }
@@ -44,7 +49,7 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
 #weekday { font-size:14px; opacity:0.85; }
 
 /* Task View */
-#taskView { margin-top:16px; background: rgba(20,20,20,0.85); border-radius:22px; padding:20px; border:1px solid rgba(255,79,163,0.3); box-shadow:0 0 35px rgba(255,79,163,0.35);}
+#taskView { margin-top:16px; background: rgba(20,20,20,0.85); border-radius:22px; padding:20px; border:1px solid rgba(255,79,163,0.25); box-shadow:0 0 24px rgba(255,79,163,0.28);}
 .taskHeader{ font-size:20px; font-weight:600; text-align:center; margin-bottom:16px; text-shadow:0 0 12px rgba(255,79,163,0.4);}
 #todoList { list-style:none; padding:0; margin-top:10px; }
 #todoList li { display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:10px; border-radius:14px; background:rgba(255,79,163,0.08); border:1px solid rgba(255,79,163,0.2); transition: transform 0.15s ease, box-shadow 0.15s ease;}
@@ -58,7 +63,8 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
 .deadlineText { font-size:12px; opacity:0.75; }
 .deadlineText.overdue { color:#ff8bc7; text-shadow:0 0 10px rgba(255,79,163,0.7); }
 .deadlineText.dueSoon { color:#ffd1e8; text-shadow:0 0 10px rgba(255,79,163,0.5); }
-.iconBtn{background:var(--glass); border:1px solid var(--pink); color:var(--pink); border-radius:50%; width:28px; height:28px; cursor:pointer;}
+.iconBtn{background:var(--glass); border:1px solid var(--pink); color:var(--pink); border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center;}
+.iconBtn:active { transform: scale(0.95); }
 #taskInput{width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--pink); border-radius:14px; padding:10px; color:white;}
 .inputRow{display:flex; gap:10px; margin-top:10px; align-items:center;}
 .deadlineRow{display:flex; gap:10px; margin-top:8px; align-items:center;}
@@ -70,10 +76,11 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
 .deadlineField.filled .deadlinePlaceholder{display:none;}
 #deadlineInput::-webkit-calendar-picker-indicator{ filter: invert(1) hue-rotate(300deg) saturate(2); opacity:0.9; cursor:pointer; }
 #addTask{width:42px; height:42px; border-radius:50%; background:var(--pink); font-size:26px; border:none; color:black;}
+#addTask:active { transform: scale(0.96); }
 #clearBtn{margin-top:12px; width:100%; background:rgba(255,79,163,0.2); border:1px solid var(--pink); color:var(--pink); border-radius:14px; padding:8px;}
 
 /* Deadline View */
-#deadlineView { margin-top:16px; background: rgba(20,20,20,0.85); border-radius:22px; padding:20px; border:1px solid rgba(255,79,163,0.3); box-shadow:0 0 35px rgba(255,79,163,0.35);}
+#deadlineView { margin-top:16px; background: rgba(20,20,20,0.85); border-radius:22px; padding:20px; border:1px solid rgba(255,79,163,0.25); box-shadow:0 0 24px rgba(255,79,163,0.28);}
 #deadlineList { list-style:none; padding:0; margin-top:10px; }
 #deadlineList li { display:grid; grid-template-columns:auto 1fr; gap:6px 10px; align-items:center; margin-bottom:12px; padding:10px; border-radius:14px; background:rgba(255,79,163,0.08); border:1px solid rgba(255,79,163,0.2); }
 .deadlineRowLine { display:flex; justify-content:space-between; gap:10px; font-size:14px; opacity:0.85; width:100%; }
@@ -85,7 +92,10 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
 
 /* Modal */
 .modalOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center; z-index:50; backdrop-filter: blur(3px); }
-.modalCard { width:min(92vw, 360px); background:rgba(20,20,20,0.9); border-radius:18px; border:1px solid rgba(255,79,163,0.35); box-shadow:0 0 35px rgba(255,79,163,0.45); padding:16px; }
+.modalOverlay:not(.hidden) .modalCard { animation: modalIn 180ms ease; }
+.modalOverlay.hidden .modalCard { animation: none; }
+.modalCard { width:min(92vw, 360px); background:rgba(20,20,20,0.9); border-radius:18px; border:1px solid rgba(255,79,163,0.28); box-shadow:0 0 24px rgba(255,79,163,0.35); padding:16px; }
+@keyframes modalIn { from { opacity:0; transform: translateY(8px) scale(0.98); } to { opacity:1; transform: translateY(0) scale(1); } }
 .modalTitle { font-size:18px; font-weight:600; text-align:center; margin-bottom:12px; }
 .modalBody { display:flex; flex-direction:column; gap:10px; }
 .modalInput { width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--pink); border-radius:14px; padding:10px; color:white; }
@@ -138,6 +148,14 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
   .monthGrid::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
   .monthDayBox { flex: 0 0 auto; height:48px; min-width:72px; font-size:13px; }
   .monthDayBox .tooltip { font-size:10px; padding:3px 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view { animation: none; }
+  .glassBtn, .sideArrow { animation: none; }
+  .dateGlow { animation: none; }
+  body::before { animation: none; }
+  .modalOverlay:not(.hidden) .modalCard { animation: none; }
 }
 
 @media (max-width: 480px) and (max-height: 760px) {

@@ -44,6 +44,10 @@ function showView(view){
     else if(view === "month") monthView.classList.remove("hidden");
     else if(view === "deadlines") deadlineView.classList.remove("hidden");
     else dateView.classList.remove("hidden");
+
+    if(view === "task"){
+        setTimeout(()=> taskInput.focus(), 50);
+    }
 }
 
 function pushView(view){
@@ -105,10 +109,10 @@ function updateGreeting(){
     setTimeout(()=>{
         if(allTasksDone && (!deadlineTasks.length || allDeadlinesDone)) {
             greetingEl.textContent="Wow sipag";
-            greetingEl2.textContent = allDeadlinesDone ? "All deadlines done!" : "😼😼😼";
+            greetingEl2.textContent = allDeadlinesDone ? "All deadlines done!" : "Nice job";
         } else {
             const hour = new Date().getHours();
-            const base = hour<12?"good morning bibi":hour<18?"good afternoon bibi":"good evening bibi";
+            const base = hour<12 ? "good morning bibi" : hour<18 ? "good afternoon bibi" : "good evening bibi";
             const followUps = hour<11
                 ? ["nag breakfast na you?"]
                 : hour<16
@@ -127,12 +131,12 @@ let t=0, currentFill=0, targetFill=0;
 let waveFrame = 0;
 const isMobile = window.matchMedia && window.matchMedia("(max-width: 480px)").matches;
 const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const waveStep = 0.04;
-const waveSamples = 120;
-const waveThrottle = 2;
+const waveStep = 0.035;
+const waveSamples = 90;
+const waveThrottle = 3;
 
 function animateWave(){
-    if (prefersReducedMotion || document.hidden) {
+    if (prefersReducedMotion || document.hidden || dateView.classList.contains("hidden")) {
         waveFrame = requestAnimationFrame(animateWave);
         return;
     }
@@ -170,13 +174,13 @@ function loadTasks(){
     tasks.forEach((t,i)=>{
         const li=document.createElement("li");
         const cb=document.createElement("div");
-        cb.className="todoCheckbox"+(t.done?" checked":"");
+        cb.className="todoCheckbox"+(t.done ? " checked" : "");
         cb.onclick=()=>{ t.done=!t.done; save(tasks); };
 
         const wrap=document.createElement("div");
         wrap.className="todoTextWrap";
         const txt=document.createElement("span");
-        txt.textContent=t.text; txt.className="todoItemText"+(t.done?" done":"");
+        txt.textContent=t.text; txt.className="todoItemText"+(t.done ? " done" : "");
         wrap.appendChild(txt);
 
         if(t.deadline){
@@ -194,12 +198,12 @@ function loadTasks(){
             }
         }
 
-        const edit=document.createElement("button"); edit.textContent="✎"; edit.className="iconBtn";
+        const edit=document.createElement("button"); edit.className="iconBtn"; edit.innerHTML="&#9998;"; edit.setAttribute("aria-label","Edit task"); edit.title="Edit";
         edit.onclick=()=>{
             openEditModal({ dateKey: key(), taskIndex: i, text: t.text, deadline: t.deadline || "" });
         };
 
-        const del=document.createElement("button"); del.textContent="✕"; del.className="iconBtn";
+        const del=document.createElement("button"); del.className="iconBtn"; del.innerHTML="&#10006;"; del.setAttribute("aria-label","Delete task"); del.title="Delete";
         del.onclick=()=>{ tasks.splice(i,1); save(tasks); };
 
         li.append(cb,wrap,edit,del); todoList.appendChild(li);
@@ -219,14 +223,16 @@ function addTask(){
     deadlineInput.value=""; 
     updateDeadlinePlaceholder();
     save(tasks);
+    taskInput.focus();
 }
 document.getElementById("addTask").onclick = addTask;
 taskInput.addEventListener("keydown", e=>e.key==="Enter" && addTask());
+deadlineInput.addEventListener("keydown", e=>e.key==="Enter" && addTask());
 taskInput.addEventListener("paste", (e)=>{
     const text = (e.clipboardData || window.clipboardData).getData("text");
     if(!text || !text.includes("\n")) return;
     e.preventDefault();
-    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>l.replace(/^[-*•\u2022]\s+/, "").replace(/^\d+[.)]\s+/, "").trim()).filter(Boolean);
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>l.replace(/^[-*\u2022]\s+/, "").replace(/^\d+[.)]\s+/, "").trim()).filter(Boolean);
     if(!lines.length) return;
     const tasks = JSON.parse(localStorage.getItem(key()))||[];
     lines.forEach(line => tasks.push({text: line, done:false, deadline:null}));
@@ -272,6 +278,11 @@ editSaveBtn.onclick = ()=>{
     }
     closeEditModal();
 };
+document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape" && !editOverlay.classList.contains("hidden")){
+        closeEditModal();
+    }
+});
 
 function updateDeadlinePlaceholder(){
     if(!deadlineField) return;
@@ -362,7 +373,7 @@ function renderDeadlineList(){
         const meta = document.createElement("div");
         meta.className = "deadlineMeta";
         const dateLabel = item.deadlineDate.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
-        meta.textContent = `${dateLabel} • ${item.dateKey}`;
+        meta.textContent = `${dateLabel} - ${item.dateKey}`;
         li.append(cb, line, meta);
         li.onclick = ()=>{
             currentDate = new Date(item.dateKey + "T00:00:00");
@@ -410,6 +421,7 @@ document.getElementById("todayBtn").onclick = () => { currentDate=new Date(); re
 let miniWaves = [];
 let monthViewActive = false;
 let miniFrame = 0;
+let miniFrameCount = 0;
 
 function renderMonth(date){
     monthTitle.textContent = date.toLocaleDateString("en-US",{month:"long", year:"numeric"});
@@ -441,9 +453,9 @@ function renderMonth(date){
 
         ["#ff9ad5","#ff4fa3","#a80057"].forEach((color,idx)=>{
             const stop = document.createElementNS(svgNS,"stop");
-            stop.setAttribute("offset", idx===0?"0%":idx===1?"50%":"100%");
+            stop.setAttribute("offset", idx===0 ? "0%" : idx===1 ? "50%" : "100%");
             stop.setAttribute("stop-color", color);
-            stop.setAttribute("stop-opacity", idx===0?"0.8":idx===1?"0.6":"0.4");
+            stop.setAttribute("stop-opacity", idx===0 ? "0.8" : idx===1 ? "0.6" : "0.4");
             grad.appendChild(stop);
         });
 
@@ -454,6 +466,8 @@ function renderMonth(date){
         path.setAttribute("fill", `url(#waveGradientMini${d})`);
         svg.appendChild(path);
         div.appendChild(svg);
+
+        div.dataset.date = boxDate.toISOString().split("T")[0];
 
         const tooltip = document.createElement("div");
         tooltip.className = "tooltip";
@@ -473,9 +487,10 @@ function renderMonth(date){
 function animateMiniWaves(){
     if (!monthViewActive || document.hidden || prefersReducedMotion) { miniFrame = 0; return; }
     miniFrame = requestAnimationFrame(animateMiniWaves);
-    const updateTooltip = (Date.now() % 6) === 0;
+    miniFrameCount = (miniFrameCount + 1) % 12;
+    const updateTooltip = miniFrameCount === 0;
     miniWaves.forEach(obj=>{
-        obj.t += 0.04;
+        obj.t += 0.035;
         const {path, boxDate, tooltip} = obj;
         const tasks = JSON.parse(localStorage.getItem(boxDate.toISOString().split("T")[0])) || [];
         const targetFill = tasks.length ? tasks.filter(t=>t.done).length / tasks.length : 0;
@@ -487,7 +502,7 @@ function animateMiniWaves(){
         for(let i=0;i<=35;i++){
             const edgeDamp = Math.sin((i/50)*Math.PI);
             const x = i*2;
-            const y = 50*(1-fill) + Math.sin(obj.t + i*0.2)*3*edgeDamp + Math.sin(obj.t*0.7 + i*0.1)*2*edgeDamp;
+            const y = 50*(1-fill) + Math.sin(obj.t + i*0.2)*2.2*edgeDamp + Math.sin(obj.t*0.7 + i*0.1)*1.6*edgeDamp;
             d += `${x} ${y} `;
         }
         d += "L100 50 Z";
@@ -501,20 +516,31 @@ function animateMiniWaves(){
                 if(!d) return false;
                 return endOfDay(d) < todayStart;
             }).length;
-            tooltip.textContent = tasks.length ? `${tasks.filter(t=>t.done).length}/${tasks.length} done${overdueCount ? ` • ${overdueCount} overdue` : ""}` : "No tasks";
+            tooltip.textContent = tasks.length ? `${tasks.filter(t=>t.done).length}/${tasks.length} done${overdueCount ? ` - ${overdueCount} overdue` : ""}` : "No tasks";
         }
     });
 }
 
 // Scroll month view to today
 function scrollToToday(){
-    const todayBox = [...monthGrid.children].find(div => div.boxDate && new Date(div.boxDate).toDateString() === new Date().toDateString());
+    const todayKey = new Date().toISOString().split("T")[0];
+    const todayBox = [...monthGrid.children].find(div => div.dataset && div.dataset.date === todayKey);
     if(todayBox){
         todayBox.scrollIntoView({behavior:"smooth", inline:"center"});
     }
 }
 
+
 renderDate();
+
+document.addEventListener("keydown", (e)=>{
+    if (editOverlay && !editOverlay.classList.contains("hidden")) return;
+    const active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;
+    if (dateView.classList.contains("hidden")) return;
+    if (e.key === "ArrowLeft") { currentDate.setDate(currentDate.getDate()-1); renderDate(); }
+    if (e.key === "ArrowRight") { currentDate.setDate(currentDate.getDate()+1); renderDate(); }
+});
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js')

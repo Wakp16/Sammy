@@ -13,12 +13,12 @@
 <main class="app">
 
   <!-- Daily View -->
-  <section id="dateView">
+  <section id="dateView" class="view">
     <div id="greeting" class="greeting">Good morning Sammy</div>
     <div id="greeting2" class="greeting greetingAlt">nag breakfast na you?</div>
 
     <div class="dateWrapper">
-      <button id="prevDay" class="sideArrow">◀</button>
+      <button id="prevDay" class="sideArrow">&#x25C0;</button>
 
       <div id="dateBox" class="dateGlow">
         <svg id="waveSvg" viewBox="0 0 1440 240" preserveAspectRatio="none">
@@ -43,7 +43,7 @@
         </div>
       </div>
 
-      <button id="nextDay" class="sideArrow">▶</button>
+      <button id="nextDay" class="sideArrow">&#x25B6;</button>
     </div>
 
     <div class="buttonRow">
@@ -54,15 +54,15 @@
   </section>
 
   <!-- Month View -->
-  <section id="monthView" class="hidden">
-    <button id="backMonthBtn" class="glassBtn">← Back</button>
+  <section id="monthView" class="view hidden">
+    <button id="backMonthBtn" class="glassBtn">&larr; Back</button>
     <h2 id="monthTitle" class="monthTitle"></h2>
     <div id="monthGrid" class="monthGrid"></div>
   </section>
 
   <!-- Task View -->
-  <section id="taskView" class="hidden">
-    <button id="backTaskBtn" class="glassBtn">← Back</button>
+  <section id="taskView" class="view hidden">
+    <button id="backTaskBtn" class="glassBtn">&larr; Back</button>
     <div id="taskHeader" class="taskHeader"></div>
     <ul id="todoList"></ul>
 
@@ -81,7 +81,7 @@
   </section>
 
   <!-- Deadline List -->
-  <section id="deadlineView" class="hidden">
+  <section id="deadlineView" class="view hidden">
     <button id="backDeadlineBtn" class="glassBtn">&larr; Back</button>
     <div class="taskHeader">Deadlines</div>
     <ul id="deadlineList"></ul>
