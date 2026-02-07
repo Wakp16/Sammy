@@ -7,31 +7,57 @@ const wavePath = document.getElementById("wavePath");
 const taskView = document.getElementById("taskView");
 const todoList = document.getElementById("todoList");
 const taskInput = document.getElementById("taskInput");
+const deadlineInput = document.getElementById("deadlineInput");
 const greetingEl = document.getElementById("greeting");
+const greetingEl2 = document.getElementById("greeting2");
 const taskHeader = document.getElementById("taskHeader");
 const dateView = document.getElementById("dateView");
 const monthView = document.getElementById("monthView");
 const monthTitle = document.getElementById("monthTitle");
 const monthGrid = document.getElementById("monthGrid");
+const deadlineView = document.getElementById("deadlineView");
+const deadlineList = document.getElementById("deadlineList");
+const editOverlay = document.getElementById("editOverlay");
+const editTaskInput = document.getElementById("editTaskInput");
+const editDeadlineInput = document.getElementById("editDeadlineInput");
+const editCancelBtn = document.getElementById("editCancelBtn");
+const editSaveBtn = document.getElementById("editSaveBtn");
+
+let editContext = null;
 
 // Initial view
 dateView.classList.remove("hidden");
 taskView.classList.add("hidden");
 monthView.classList.add("hidden");
+deadlineView.classList.add("hidden");
 
 function key(date=currentDate){ return date.toISOString().split("T")[0]; }
 function isToday(){ return new Date().toDateString()===currentDate.toDateString(); }
 
 function updateGreeting(){
     const tasks = JSON.parse(localStorage.getItem(key()))||[];
+    const deadlineTasks = getDeadlineTasks();
+    const allTasksDone = tasks.length > 0 && tasks.every(t=>t.done);
+    const allDeadlinesDone = deadlineTasks.length > 0 && deadlineTasks.every(t=>t.done);
     greetingEl.classList.remove("show");
+    greetingEl2.classList.remove("show");
     setTimeout(()=>{
-        if(tasks.length && tasks.every(t=>t.done)) greetingEl.textContent="Wow sipag";
-        else{
+        if(allTasksDone && (!deadlineTasks.length || allDeadlinesDone)) {
+            greetingEl.textContent="Wow sipag";
+            greetingEl2.textContent = allDeadlinesDone ? "All deadlines done!" : "😼😼😼";
+        } else {
             const hour = new Date().getHours();
-            greetingEl.textContent = hour<12?"Good morning Sammy":hour<18?"Good afternoon Sammy":"Good evening Sammy";
+            const base = hour<12?"good morning bibi":hour<18?"good afternoon bibi":"good evening bibi";
+            const followUps = hour<11
+                ? ["nag breakfast na you?"]
+                : hour<16
+                    ? ["nag lunch na you?"]
+                    : ["nag dinner na you?"];
+            greetingEl.textContent = base;
+            greetingEl2.textContent = allDeadlinesDone ? "All deadlines done!" : followUps[Math.floor(Math.random()*followUps.length)];
         }
         greetingEl.classList.add("show");
+        greetingEl2.classList.add("show");
     },100);
 }
 
@@ -69,29 +95,187 @@ function loadTasks(){
         const cb=document.createElement("div");
         cb.className="todoCheckbox"+(t.done?" checked":"");
         cb.onclick=()=>{ t.done=!t.done; save(tasks); };
+
+        const wrap=document.createElement("div");
+        wrap.className="todoTextWrap";
         const txt=document.createElement("span");
         txt.textContent=t.text; txt.className="todoItemText"+(t.done?" done":"");
+        wrap.appendChild(txt);
+
+        if(t.deadline){
+            const deadlineDate=parseDeadlineDate(t.deadline);
+            if(deadlineDate){
+                const deadlineEl=document.createElement("span");
+                deadlineEl.className="deadlineText";
+                const todayStart=startOfDay(new Date());
+                const deadlineEnd=endOfDay(deadlineDate);
+                const dueSoonEnd=endOfDay(new Date(todayStart.getTime()+24*60*60*1000));
+                if(!t.done && deadlineEnd < todayStart) deadlineEl.classList.add("overdue");
+                else if(!t.done && deadlineEnd <= dueSoonEnd) deadlineEl.classList.add("dueSoon");
+                deadlineEl.textContent = `Deadline: ${deadlineDate.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`;
+                wrap.appendChild(deadlineEl);
+            }
+        }
+
         const edit=document.createElement("button"); edit.textContent="✎"; edit.className="iconBtn";
-        edit.onclick=()=>{ const v=prompt("Edit task",t.text); if(v){t.text=v; save(tasks);} };
+        edit.onclick=()=>{
+            openEditModal({ dateKey: key(), taskIndex: i, text: t.text, deadline: t.deadline || "" });
+        };
+
         const del=document.createElement("button"); del.textContent="✕"; del.className="iconBtn";
         del.onclick=()=>{ tasks.splice(i,1); save(tasks); };
-        li.append(cb,txt,edit,del); todoList.appendChild(li);
+
+        li.append(cb,wrap,edit,del); todoList.appendChild(li);
     });
 }
 function save(tasks){ 
     localStorage.setItem(key(),JSON.stringify(tasks)); 
     loadTasks(); 
+    updateGreeting();
 }
 function addTask(){ 
     if(!taskInput.value.trim()) return; 
     const tasks=JSON.parse(localStorage.getItem(key()))||[]; 
-    tasks.push({text:taskInput.value, done:false}); 
+    const deadline = deadlineInput.value ? normalizeDeadlineString(deadlineInput.value) : null;
+    tasks.push({text:taskInput.value.trim(), done:false, deadline}); 
     taskInput.value=""; 
+    deadlineInput.value=""; 
     save(tasks);
 }
 document.getElementById("addTask").onclick = addTask;
 taskInput.addEventListener("keydown", e=>e.key==="Enter" && addTask());
 document.getElementById("clearBtn").onclick = ()=>{ localStorage.removeItem(key()); loadTasks(); };
+
+function normalizeDeadlineString(value){
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if(!match) return null;
+    return value;
+}
+
+function openEditModal({dateKey, taskIndex, text, deadline}){
+    editContext = {dateKey, taskIndex};
+    editTaskInput.value = text || "";
+    editDeadlineInput.value = deadline || "";
+    editOverlay.classList.remove("hidden");
+    editTaskInput.focus();
+}
+
+function closeEditModal(){
+    editContext = null;
+    editOverlay.classList.add("hidden");
+}
+
+editCancelBtn.onclick = closeEditModal;
+editOverlay.addEventListener("click", (e)=>{ if(e.target === editOverlay) closeEditModal(); });
+editSaveBtn.onclick = ()=>{
+    if(!editContext) return closeEditModal();
+    const tasks = JSON.parse(localStorage.getItem(editContext.dateKey)) || [];
+    const task = tasks[editContext.taskIndex];
+    if(task){
+        const text = editTaskInput.value.trim();
+        if(text) task.text = text;
+        const deadline = normalizeDeadlineString(editDeadlineInput.value);
+        task.deadline = deadline ? deadline : null;
+        localStorage.setItem(editContext.dateKey, JSON.stringify(tasks));
+        if(editContext.dateKey === key()) loadTasks();
+        renderDeadlineList();
+        updateGreeting();
+    }
+    closeEditModal();
+};
+
+function parseDeadlineDate(value){
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if(!match) return null;
+    const y = Number(match[1]);
+    const m = Number(match[2]) - 1;
+    const d = Number(match[3]);
+    const date = new Date(y, m, d);
+    return isNaN(date.getTime()) ? null : date;
+}
+
+function startOfDay(date){
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function endOfDay(date){
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+}
+
+function getDeadlineTasks(){
+    const items = [];
+    for(let i=0; i<localStorage.length; i++){
+        const k = localStorage.key(i);
+        if(!k || !/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
+        const tasks = JSON.parse(localStorage.getItem(k)) || [];
+        tasks.forEach((t, idx)=>{
+            if(!t.deadline) return;
+            const d = parseDeadlineDate(t.deadline);
+            if(!d) return;
+            items.push({
+                dateKey: k,
+                taskIndex: idx,
+                text: t.text,
+                done: !!t.done,
+                deadlineDate: d
+            });
+        });
+    }
+    items.sort((a,b)=> a.deadlineDate - b.deadlineDate);
+    return items;
+}
+
+function renderDeadlineList(){
+    deadlineList.innerHTML = "";
+    const items = getDeadlineTasks();
+    if(!items.length){
+        const empty = document.createElement("li");
+        empty.textContent = "No deadlines yet";
+        deadlineList.appendChild(empty);
+        return;
+    }
+    const todayStart = startOfDay(new Date());
+    const dueSoonEnd = endOfDay(new Date(todayStart.getTime()+24*60*60*1000));
+    items.forEach(item=>{
+        const li = document.createElement("li");
+        const cb = document.createElement("div");
+        cb.className = "todoCheckbox" + (item.done ? " checked" : "");
+        cb.onclick = (e)=>{
+            e.stopPropagation();
+            const tasks = JSON.parse(localStorage.getItem(item.dateKey)) || [];
+            if(tasks[item.taskIndex]){
+                tasks[item.taskIndex].done = !tasks[item.taskIndex].done;
+                localStorage.setItem(item.dateKey, JSON.stringify(tasks));
+                renderDeadlineList();
+                updateGreeting();
+            }
+        };
+        const line = document.createElement("div");
+        line.className = "deadlineRowLine";
+        const title = document.createElement("span");
+        title.className = "deadlineTaskText";
+        title.textContent = item.text;
+        const badge = document.createElement("span");
+        badge.className = "deadlineBadge";
+        const deadlineEnd = endOfDay(item.deadlineDate);
+        if(!item.done && deadlineEnd < todayStart) { badge.classList.add("overdue"); badge.textContent = "Overdue"; }
+        else if(!item.done && deadlineEnd <= dueSoonEnd) { badge.classList.add("dueSoon"); badge.textContent = "Due soon"; }
+        else badge.textContent = item.done ? "Done" : "Upcoming";
+        line.append(title, badge);
+        const meta = document.createElement("div");
+        meta.className = "deadlineMeta";
+        const dateLabel = item.deadlineDate.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+        meta.textContent = `${dateLabel} • ${item.dateKey}`;
+        li.append(cb, line, meta);
+        li.onclick = ()=>{
+            currentDate = new Date(item.dateKey + "T00:00:00");
+            renderDate();
+            deadlineView.classList.add("hidden");
+            dateView.classList.remove("hidden");
+        };
+        deadlineList.appendChild(li);
+    });
+}
 
 // Render date
 function renderDate() {
@@ -102,15 +286,24 @@ function renderDate() {
 }
 
 // Views
-dateBox.onclick = ()=>{ dateView.classList.add("hidden"); taskView.classList.remove("hidden"); monthView.classList.add("hidden"); loadTasks(); };
+dateBox.onclick = ()=>{ dateView.classList.add("hidden"); taskView.classList.remove("hidden"); monthView.classList.add("hidden"); deadlineView.classList.add("hidden"); loadTasks(); };
 document.getElementById("backTaskBtn").onclick = ()=>{ taskView.classList.add("hidden"); dateView.classList.remove("hidden"); };
 document.getElementById("monthViewBtn").onclick = ()=>{
     monthView.classList.remove("hidden");
     dateView.classList.add("hidden");
     taskView.classList.add("hidden");
+    deadlineView.classList.add("hidden");
     renderMonth(currentDate);
 };
 document.getElementById("backMonthBtn").onclick = ()=>{ monthView.classList.add("hidden"); dateView.classList.remove("hidden"); };
+document.getElementById("deadlineListBtn").onclick = ()=>{
+    deadlineView.classList.remove("hidden");
+    dateView.classList.add("hidden");
+    taskView.classList.add("hidden");
+    monthView.classList.add("hidden");
+    renderDeadlineList();
+};
+document.getElementById("backDeadlineBtn").onclick = ()=>{ deadlineView.classList.add("hidden"); dateView.classList.remove("hidden"); };
 document.getElementById("prevDay").onclick = () => { currentDate.setDate(currentDate.getDate()-1); renderDate(); };
 document.getElementById("nextDay").onclick = () => { currentDate.setDate(currentDate.getDate()+1); renderDate(); };
 document.getElementById("todayBtn").onclick = () => { currentDate=new Date(); renderDate(); };
@@ -130,7 +323,7 @@ function renderMonth(date){
 
     for(let d=1; d<=daysInMonth; d++){
         const div = document.createElement("div");
-        div.className = "monthDayBox";
+        div.className = "monthDayBox dateGlow";
         const boxDate = new Date(date.getFullYear(), date.getMonth(), d);
         div.textContent = d;
 
@@ -194,7 +387,14 @@ function animateMiniWaves(){
         d += "L100 50 Z";
         path.setAttribute("d",d);
 
-        tooltip.textContent = tasks.length ? `${tasks.filter(t=>t.done).length}/${tasks.length} done` : "No tasks";
+        const todayStart = startOfDay(new Date());
+        const overdueCount = tasks.filter(t=>{
+            if(!t.deadline || t.done) return false;
+            const d = parseDeadlineDate(t.deadline);
+            if(!d) return false;
+            return endOfDay(d) < todayStart;
+        }).length;
+        tooltip.textContent = tasks.length ? `${tasks.filter(t=>t.done).length}/${tasks.length} done${overdueCount ? ` • ${overdueCount} overdue` : ""}` : "No tasks";
     });
     requestAnimationFrame(animateMiniWaves);
 }
@@ -212,6 +412,23 @@ renderDate();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js')
-    .then(() => console.log("Service Worker registered"))
+    .then(reg => {
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener("statechange", () => {
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            newWorker.postMessage({ type: "SKIP_WAITING" });
+          }
+        });
+      });
+    })
     .catch(err => console.error("SW registration failed:", err));
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    window.location.reload();
+  });
 }
