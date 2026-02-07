@@ -22,6 +22,7 @@ const editTaskInput = document.getElementById("editTaskInput");
 const editDeadlineInput = document.getElementById("editDeadlineInput");
 const editCancelBtn = document.getElementById("editCancelBtn");
 const editSaveBtn = document.getElementById("editSaveBtn");
+const deadlineField = document.querySelector(".deadlineField");
 
 let editContext = null;
 
@@ -30,6 +31,31 @@ dateView.classList.remove("hidden");
 taskView.classList.add("hidden");
 monthView.classList.add("hidden");
 deadlineView.classList.add("hidden");
+
+function showView(view){
+    dateView.classList.add("hidden");
+    taskView.classList.add("hidden");
+    monthView.classList.add("hidden");
+    deadlineView.classList.add("hidden");
+    if(view === "task") taskView.classList.remove("hidden");
+    else if(view === "month") monthView.classList.remove("hidden");
+    else if(view === "deadlines") deadlineView.classList.remove("hidden");
+    else dateView.classList.remove("hidden");
+}
+
+function pushView(view){
+    if (history.state?.view === view) return;
+    history.pushState({view}, "", location.pathname + location.search);
+}
+
+history.replaceState({view:"date"}, "", location.pathname + location.search);
+window.addEventListener("popstate", (e)=>{
+    const view = e.state?.view || "date";
+    showView(view);
+    if(view === "task") loadTasks();
+    if(view === "month") renderMonth(currentDate);
+    if(view === "deadlines") renderDeadlineList();
+});
 
 function key(date=currentDate){ return date.toISOString().split("T")[0]; }
 function isToday(){ return new Date().toDateString()===currentDate.toDateString(); }
@@ -140,6 +166,7 @@ function addTask(){
     tasks.push({text:taskInput.value.trim(), done:false, deadline}); 
     taskInput.value=""; 
     deadlineInput.value=""; 
+    updateDeadlinePlaceholder();
     save(tasks);
 }
 document.getElementById("addTask").onclick = addTask;
@@ -183,6 +210,14 @@ editSaveBtn.onclick = ()=>{
     }
     closeEditModal();
 };
+
+function updateDeadlinePlaceholder(){
+    if(!deadlineField) return;
+    deadlineField.classList.toggle("filled", !!deadlineInput.value);
+}
+deadlineInput.addEventListener("change", updateDeadlinePlaceholder);
+deadlineInput.addEventListener("input", updateDeadlinePlaceholder);
+updateDeadlinePlaceholder();
 
 function parseDeadlineDate(value){
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -286,46 +321,39 @@ function renderDate() {
 }
 
 // Views
-dateBox.onclick = ()=>{ dateView.classList.add("hidden"); taskView.classList.remove("hidden"); monthView.classList.add("hidden"); deadlineView.classList.add("hidden"); loadTasks(); };
-document.getElementById("backTaskBtn").onclick = ()=>{ taskView.classList.add("hidden"); dateView.classList.remove("hidden"); };
+dateBox.onclick = ()=>{
+    showView("task");
+    loadTasks();
+    pushView("task");
+};
+document.getElementById("backTaskBtn").onclick = ()=>{ showView("date"); pushView("date"); };
 document.getElementById("monthViewBtn").onclick = ()=>{
-    monthView.classList.remove("hidden");
-    dateView.classList.add("hidden");
-    taskView.classList.add("hidden");
-    deadlineView.classList.add("hidden");
+    showView("month");
     renderMonth(currentDate);
+    pushView("month");
 };
-document.getElementById("backMonthBtn").onclick = ()=>{ monthView.classList.add("hidden"); dateView.classList.remove("hidden"); };
+document.getElementById("backMonthBtn").onclick = ()=>{ monthViewActive = false; showView("date"); pushView("date"); };
 document.getElementById("deadlineListBtn").onclick = ()=>{
-    deadlineView.classList.remove("hidden");
-    dateView.classList.add("hidden");
-    taskView.classList.add("hidden");
-    monthView.classList.add("hidden");
+    monthViewActive = false;
+    showView("deadlines");
     renderDeadlineList();
+    pushView("deadlines");
 };
-document.getElementById("backDeadlineBtn").onclick = ()=>{ deadlineView.classList.add("hidden"); dateView.classList.remove("hidden"); };
+document.getElementById("backDeadlineBtn").onclick = ()=>{ showView("date"); pushView("date"); };
 document.getElementById("prevDay").onclick = () => { currentDate.setDate(currentDate.getDate()-1); renderDate(); };
 document.getElementById("nextDay").onclick = () => { currentDate.setDate(currentDate.getDate()+1); renderDate(); };
 document.getElementById("todayBtn").onclick = () => { currentDate=new Date(); renderDate(); };
-document.getElementById("updateBtn").onclick = async () => {
-    if ("serviceWorker" in navigator) {
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (reg) reg.update();
-    }
-    if ("caches" in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
-    }
-    window.location.reload();
-};
 
 // Month view + mini waves
 let miniWaves = [];
+let monthViewActive = false;
+let miniFrame = 0;
 
 function renderMonth(date){
     monthTitle.textContent = date.toLocaleDateString("en-US",{month:"long", year:"numeric"});
     monthGrid.innerHTML = "";
     miniWaves = [];
+    monthViewActive = true;
 
     const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
     const daysInMonth = new Date(date.getFullYear(), date.getMonth()+1, 0).getDate();
@@ -334,7 +362,7 @@ function renderMonth(date){
 
     for(let d=1; d<=daysInMonth; d++){
         const div = document.createElement("div");
-        div.className = "monthDayBox dateGlow";
+        div.className = "monthDayBox";
         const boxDate = new Date(date.getFullYear(), date.getMonth(), d);
         div.textContent = d;
 
@@ -377,9 +405,13 @@ function renderMonth(date){
     }
 
     scrollToToday();
+    if (!miniFrame) animateMiniWaves();
 }
 
 function animateMiniWaves(){
+    if (!monthViewActive) { miniFrame = 0; return; }
+    miniFrame = requestAnimationFrame(animateMiniWaves);
+    const updateTooltip = (Date.now() % 3) === 0;
     miniWaves.forEach(obj=>{
         obj.t += 0.05;
         const {path, boxDate, tooltip} = obj;
@@ -390,26 +422,27 @@ function animateMiniWaves(){
         const fill = obj.currentFill;
 
         let d = `M0 50 L0 ${50*(1-fill)} `;
-        for(let i=0;i<=100;i++){
-            const edgeDamp = Math.sin((i/100)*Math.PI);
+        for(let i=0;i<=50;i++){
+            const edgeDamp = Math.sin((i/50)*Math.PI);
+            const x = i*2;
             const y = 50*(1-fill) + Math.sin(obj.t + i*0.2)*3*edgeDamp + Math.sin(obj.t*0.7 + i*0.1)*2*edgeDamp;
-            d += `${i} ${y} `;
+            d += `${x} ${y} `;
         }
         d += "L100 50 Z";
         path.setAttribute("d",d);
 
-        const todayStart = startOfDay(new Date());
-        const overdueCount = tasks.filter(t=>{
-            if(!t.deadline || t.done) return false;
-            const d = parseDeadlineDate(t.deadline);
-            if(!d) return false;
-            return endOfDay(d) < todayStart;
-        }).length;
-        tooltip.textContent = tasks.length ? `${tasks.filter(t=>t.done).length}/${tasks.length} done${overdueCount ? ` • ${overdueCount} overdue` : ""}` : "No tasks";
+        if(updateTooltip){
+            const todayStart = startOfDay(new Date());
+            const overdueCount = tasks.filter(t=>{
+                if(!t.deadline || t.done) return false;
+                const d = parseDeadlineDate(t.deadline);
+                if(!d) return false;
+                return endOfDay(d) < todayStart;
+            }).length;
+            tooltip.textContent = tasks.length ? `${tasks.filter(t=>t.done).length}/${tasks.length} done${overdueCount ? ` • ${overdueCount} overdue` : ""}` : "No tasks";
+        }
     });
-    requestAnimationFrame(animateMiniWaves);
 }
-animateMiniWaves();
 
 // Scroll month view to today
 function scrollToToday(){
