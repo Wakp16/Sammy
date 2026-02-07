@@ -15,8 +15,9 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
 .app { width:340px; }
 
 /* Greeting */
-.greeting { text-align:center; font-size:20px; font-weight:600; padding:14px 22px; border-radius:24px; background:linear-gradient(135deg,#ff9ad5,#ff4fa3); box-shadow:0 4px 12px rgba(255,79,163,0.35); margin-bottom:28px; opacity:0; transform:translateY(-60px); transition: all 0.6s ease; z-index:10;}
+.greeting { text-align:center; font-size:20px; font-weight:600; padding:14px 22px; border-radius:24px; background:linear-gradient(135deg,#ff9ad5,#ff4fa3); box-shadow:0 4px 12px rgba(255,79,163,0.35); margin-bottom:12px; opacity:0; transform:translateY(-60px); transition: all 0.6s ease; z-index:10;}
 .greeting.show { opacity:1; transform:translateY(-20px); }
+.greetingAlt { font-size:16px; font-weight:500; padding:10px 18px; margin-bottom:24px; background:linear-gradient(135deg,#ff8fcf,#ff3e9c); }
 
 /* Buttons */
 .buttonRow { display:flex; justify-content:center; gap:12px; margin-top:16px; }
@@ -25,10 +26,13 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
 @keyframes floatBtn { 0%{transform:translateY(0);} 100%{transform:translateY(-6px);} }
 
 /* Date Box */
-.dateWrapper { display:flex; align-items:center; justify-content:center; gap:10px; overflow:hidden; position:relative; z-index:1; }
+.dateWrapper { display:flex; align-items:center; justify-content:center; gap:10px; overflow:visible; position:relative; z-index:1; }
 .sideArrow { width:38px;height:38px;border-radius:50%;background:var(--glass); border:1px solid var(--pink); color:var(--pink); cursor:pointer; box-shadow:0 0 14px rgba(255,79,163,0.5); transition: transform 0.2s ease; animation: floatBtn 2.5s ease-in-out infinite alternate;}
 #dateBox { width:240px;height:240px;border-radius:28px;background:var(--glass); backdrop-filter: blur(18px); border:1px solid rgba(255,79,163,0.2); position:relative; overflow:hidden; cursor:pointer;}
 #dateBox.today { box-shadow:0 0 45px rgba(255,79,163,0.9); }
+.dateGlow { box-shadow: 0 0 18px rgba(255,79,163,0.55), 0 0 40px rgba(255,79,163,0.4); filter: drop-shadow(0 0 18px rgba(255,79,163,0.45)); animation: glowPulse 4s ease-in-out infinite; }
+#dateBox.today.dateGlow { box-shadow:0 0 55px rgba(255,79,163,1); }
+@keyframes glowPulse { 0%{ box-shadow:0 0 14px rgba(255,79,163,0.4), 0 0 28px rgba(255,79,163,0.25);} 50%{ box-shadow:0 0 28px rgba(255,79,163,0.8), 0 0 50px rgba(255,79,163,0.45);} 100%{ box-shadow:0 0 14px rgba(255,79,163,0.4), 0 0 28px rgba(255,79,163,0.25);} }
 
 /* Wave */
 #waveSvg { position:absolute; bottom:0; width:100%; height:100%; z-index:2; pointer-events:none; }
@@ -45,16 +49,42 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
 #todoList { list-style:none; padding:0; margin-top:10px; }
 #todoList li { display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:10px; border-radius:14px; background:rgba(255,79,163,0.08); border:1px solid rgba(255,79,163,0.2); transition: transform 0.15s ease, box-shadow 0.15s ease;}
 #todoList li:hover { transform: translateY(-2px); box-shadow:0 0 15px rgba(255,79,163,0.3); }
+.todoTextWrap { flex:1; display:flex; flex-direction:column; gap:4px; }
 .todoCheckbox { width:22px; height:22px; border-radius:6px; border:2px solid var(--pink); cursor:pointer; transition:transform 0.2s ease,box-shadow 0.2s ease; }
 .todoCheckbox.checked { background: var(--pink); box-shadow:0 0 16px var(--pink); animation:checkPop 0.35s ease; }
 @keyframes checkPop {0%{transform:scale(0.8);}60%{transform:scale(1.3);}100%{transform:scale(1);} }
 .todoItemText{flex:1;}
 .todoItemText.done{text-decoration:line-through; opacity:0.5;}
+.deadlineText { font-size:12px; opacity:0.75; }
+.deadlineText.overdue { color:#ff8bc7; text-shadow:0 0 10px rgba(255,79,163,0.7); }
+.deadlineText.dueSoon { color:#ffd1e8; text-shadow:0 0 10px rgba(255,79,163,0.5); }
 .iconBtn{background:var(--glass); border:1px solid var(--pink); color:var(--pink); border-radius:50%; width:28px; height:28px; cursor:pointer;}
-.inputRow{display:flex; gap:10px; margin-top:10px;}
-#taskInput{flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--pink); border-radius:14px; padding:10px; color:white;}
+#taskInput{width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--pink); border-radius:14px; padding:10px; color:white;}
+.inputRow{display:flex; gap:10px; margin-top:10px; align-items:center;}
+.deadlineRow{display:flex; gap:10px; margin-top:8px; align-items:center;}
+#deadlineInput{flex:1; min-width:0; background:rgba(0,0,0,0.4); border:1px solid var(--pink); border-radius:14px; padding:10px; color:white;}
+#deadlineInput::-webkit-calendar-picker-indicator{ filter: invert(1) hue-rotate(300deg) saturate(2); opacity:0.9; cursor:pointer; }
 #addTask{width:42px; height:42px; border-radius:50%; background:var(--pink); font-size:26px; border:none; color:black;}
 #clearBtn{margin-top:12px; width:100%; background:rgba(255,79,163,0.2); border:1px solid var(--pink); color:var(--pink); border-radius:14px; padding:8px;}
+
+/* Deadline View */
+#deadlineView { margin-top:16px; background: rgba(20,20,20,0.85); border-radius:22px; padding:20px; border:1px solid rgba(255,79,163,0.3); box-shadow:0 0 35px rgba(255,79,163,0.35);}
+#deadlineList { list-style:none; padding:0; margin-top:10px; }
+#deadlineList li { display:grid; grid-template-columns:auto 1fr; gap:6px 10px; align-items:center; margin-bottom:12px; padding:10px; border-radius:14px; background:rgba(255,79,163,0.08); border:1px solid rgba(255,79,163,0.2); }
+.deadlineRowLine { display:flex; justify-content:space-between; gap:10px; font-size:14px; opacity:0.85; width:100%; }
+.deadlineTaskText { font-weight:600; }
+.deadlineMeta { font-size:12px; opacity:0.75; grid-column:2; }
+.deadlineBadge { font-size:11px; padding:2px 6px; border-radius:10px; border:1px solid rgba(255,79,163,0.4); color:var(--pink); }
+.deadlineBadge.overdue { color:#ff8bc7; border-color:#ff8bc7; text-shadow:0 0 10px rgba(255,79,163,0.7); }
+.deadlineBadge.dueSoon { color:#ffd1e8; border-color:#ffd1e8; text-shadow:0 0 10px rgba(255,79,163,0.5); }
+
+/* Modal */
+.modalOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center; z-index:50; backdrop-filter: blur(3px); }
+.modalCard { width:min(92vw, 360px); background:rgba(20,20,20,0.9); border-radius:18px; border:1px solid rgba(255,79,163,0.35); box-shadow:0 0 35px rgba(255,79,163,0.45); padding:16px; }
+.modalTitle { font-size:18px; font-weight:600; text-align:center; margin-bottom:12px; }
+.modalBody { display:flex; flex-direction:column; gap:10px; }
+.modalInput { width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--pink); border-radius:14px; padding:10px; color:white; }
+.modalActions { display:flex; justify-content:space-between; gap:10px; margin-top:14px; }
 
 /* Month Grid */
 .monthGrid { display:grid; grid-template-columns: repeat(7,1fr); gap:6px; margin-top:12px; }
@@ -65,22 +95,30 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
 .monthDayBox:hover .tooltip { opacity:1; }
 
 /* ===== Mobile Responsive ===== */
-@media (max-width: 400px) {
-  .app { width: 90vw; }
-  .greeting { font-size: 18px; padding:12px 16px; }
+@media (max-width: 480px) {
+  body { align-items:flex-start; padding:18px 0 28px; }
+  .app { width:min(92vw, 380px); }
+  .greeting { font-size: 16px; padding:10px 14px; margin-bottom:18px; }
   .buttonRow { flex-wrap: wrap; gap: 8px; }
-  .glassBtn { padding: 5px 12px; font-size: 14px; }
+  .glassBtn { padding: 6px 12px; font-size: 13px; }
   .sideArrow { width:32px; height:32px; }
-  #dateBox { width:90vw; height:calc(90vw); border-radius:20px; }
-  #dateBig { font-size:22px; }
+  #dateBox { width:84vw; height:84vw; max-width:320px; max-height:320px; border-radius:20px; }
+  #dateBig { font-size:20px; }
   #weekday { font-size:12px; }
-  #taskView { padding:16px; margin-top:12px; }
-  #todoList li { flex-direction: column; align-items:flex-start; gap:6px; }
-  .inputRow { flex-direction: column; gap:6px; }
+  .dateWrapper { gap:8px; }
+  #taskView, #deadlineView { padding:14px; margin-top:12px; }
+  .taskHeader { font-size:18px; margin-bottom:12px; }
+  #todoList li { flex-direction: column; align-items:flex-start; gap:6px; padding:10px; }
+  .todoCheckbox { width:20px; height:20px; }
+  .iconBtn { width:26px; height:26px; }
+  .inputRow { gap:6px; }
+  #taskInput { padding:9px; font-size:14px; }
+  .deadlineRow { gap:8px; }
+  #deadlineInput { padding:9px; font-size:14px; }
   #addTask { width:38px; height:38px; font-size:22px; }
+  #clearBtn { padding:8px; }
   .monthGrid {
-    display: grid;
-    grid-template-columns: repeat(7, 80px);
+    grid-template-columns: repeat(7, 72px);
     gap: 6px;
     overflow-x: auto;
     padding-bottom: 8px;
@@ -88,6 +126,15 @@ body::before { content:""; position:fixed; top:0; left:0; width:300%; height:300
   .monthGrid::-webkit-scrollbar { height: 6px; }
   .monthGrid::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 3px; }
   .monthGrid::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
-  .monthDayBox { flex: 0 0 auto; height:50px; min-width:80px; font-size:14px; }
+  .monthDayBox { flex: 0 0 auto; height:48px; min-width:72px; font-size:13px; }
   .monthDayBox .tooltip { font-size:10px; padding:3px 6px; }
+}
+
+@media (max-width: 360px) {
+  .app { width:94vw; }
+  #dateBox { width:88vw; height:88vw; max-width:300px; max-height:300px; }
+  .glassBtn { padding: 5px 10px; font-size: 12px; }
+  #dateBig { font-size:18px; }
+  .deadlineRow { flex-direction: column; align-items:stretch; }
+  #addTask { width:100%; border-radius:12px; }
 }
